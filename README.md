@@ -12,7 +12,7 @@ The code had to go through quite a bit of modifications to make it runnable on t
 
 ## Implementation
 The highly parallelizable part of MSDF algorithm has been moved to run on the GPU.
-[Implementation](img/diagram.png)
+![Implementation](img/diagram.png)
 
 ## Usage:
 ```C
