@@ -11,7 +11,12 @@ The code had to go through quite a bit of modifications to make it runnable on t
 4. Dropped support for cubic segments (for simplicity's sake, this will probably be added later)
 
 ## Implementation
-The highly parallelizable part of MSDF algorithm has been moved to run on the GPU.
+The highly parallelizable part of MSDF algorithm has been moved to run on the GPU (the part of msdfgen which is executed per each pixel of the bitmap).
+
+A loaded msdfgl font has two textures:
+- Atlas texture - 2D RGBA texture containing all the generated MSDF bitmaps
+- Index texture - 1D FLOAT texture buffer containing the coordinates and dimensions of each glyph on the atlas texture (there is also information about the bearing of the glyph so that we do not have to store the bitmap all the way from the origin, only from where the glyph actually starts).
+
 ![Implementation](img/diagram.png)
 
 ## Usage:
@@ -23,9 +28,9 @@ context = msdfgl_create_context();
 
 msdfgl_font_t font;
 font = msdfgl_load_font(context, "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
-                         4.0, 2.0, 0); /* range, scale, texture_width (defaults to max available) */
+                        4.0, 2.0, 0); /* range, scale, texture_width (defaults to max available) */
 
-/* Loads characters 0-128 onto the textures. *
+/* Loads characters 0-128 onto the textures. This is where all the GPU cycles went. *
 msdfgl_generate_ascii(font);
 
 /*                  4x4 projection-matrix  color       size */
@@ -35,6 +40,11 @@ msdfgl_printf(font, (GLfloat *)projection, 0xffffffff, 18, "Hello, MSFDGL!");
 msdfgl_destroy_font(font);
 msdfgl_destroy_context(context);
 ```
+
+The library includes two shaders:
+- Generator shader - heavy lifting, generates the MSDF bitmaps.
+- Render shader - renders crisp text from the generated textures.
+
 
 ## TODO:
 - Implement `msdfgl_printf`.
