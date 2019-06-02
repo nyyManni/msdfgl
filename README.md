@@ -17,6 +17,8 @@ A loaded msdfgl font has two textures:
 - Atlas texture - 2D RGBA texture containing all the generated MSDF bitmaps
 - Index texture - 1D FLOAT texture buffer containing the coordinates and dimensions of each glyph on the atlas texture (there is also information about the bearing of the glyph so that we do not have to store the bitmap all the way from the origin, only from where the glyph actually starts).
 
+Both the atlas and index textures grow as more glyphs are rendered. The user can render all the desired glyphs in bulk, or render them dynamically as new glyphs are introduced. -- Or a combination of those, for example render ASCII characters at the beginning, and then all the other characters as they are used. Rendering multiple characters at once yields better performance as we don't have to perform multiple copy-to-GPU operations nor to re-bind the buffers and shader in between.
+
 ![Implementation](img/diagram.png)
 
 ## Usage:
