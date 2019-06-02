@@ -30,7 +30,7 @@ msdfgl_font_t font;
 font = msdfgl_load_font(context, "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
                         4.0, 2.0, 0); /* range, scale, texture_width (defaults to max available) */
 
-/* Loads characters 0-128 onto the textures. This is where all the GPU cycles went. *
+/* Loads characters 0-128 onto the textures. This is where all the GPU cycles went. */
 msdfgl_generate_ascii(font);
 
 /*                  4x4 projection-matrix  color       size */
