@@ -1,6 +1,6 @@
 # MSDFGL - OpenGL implementation of the multi-channel distance-field algorithm.
 
-> **NOTE**: This is a work in progress and currently requires a hacked version of msdfgen, which can be found from my fork of it, it branch c-cleanup.
+> **NOTE**: This is a work in progress and currently requires a hacked version of msdfgen, which can be found from my fork of it, it branch c-cleanup. Install the dynamic lib and headers with meson/ninja.
 
 The MSDF algorithm implemented in this library is created by Viktor Chlumský (https://github.com/Chlumsky/msdfgen). The full credit of the algorithm goes to him, although none of the original code can be found from this repository.
 
