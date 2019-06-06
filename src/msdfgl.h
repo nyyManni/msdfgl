@@ -3,7 +3,7 @@
 
 /**
  * OpenGL implementation for multi-channel signed distance field generator
- * ---------------------------------------------------------------
+ * -----------------------------------------------------------------------
  *
  * msdfgl              Henrik Nyman,    (c) 2019 -
  * msdfgen             Viktor Chlumsky, (c) 2014 - 2019
@@ -23,8 +23,6 @@
 #include FT_FREETYPE_H
 
 #include <GL/gl.h>
-
-#include <msdf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -123,7 +121,7 @@ struct _msdfgl_font {
     size_t _offset_y;
     size_t _offset_x;
     size_t _y_increment;
-    
+
     /**
      * Amount of pixels to leave blank between MSDF bitmaps.
      */
@@ -136,8 +134,6 @@ struct _msdfgl_font {
     GLuint _point_input_buffer;
     GLuint _meta_input_texture;
     GLuint _point_input_texture;
-
-    msdf_font_handle _msdf_font;
 
     int _direct_lookup_upper_limit;
 };
@@ -152,33 +148,33 @@ typedef struct _msdfgl_glyph {
      */
     GLfloat x;
     GLfloat y;
-    
+
     /**
      * The color of the character in 0xRRGGBBAA format.
      */
     GLuint color;
-    
+
     /**
      * Unicode code point of the character.
      */
     GLint key;
-    
+
     /**
      * Font size to use for rendering of this character.
      */
     GLfloat size;
-    
+
     /**
      * Y offset (for e.g. subscripts and superscripts).
      */
     GLfloat offset;
-    
+
     /**
      * The amount of "lean" on the character. Positive leans to the right,
      * negative leans to the left.
      */
     GLfloat skew;
-    
+
     /**
      * The "boldness" of the character. 0.5 is normal strength, lower is thinner
      * and higher is thicker.

@@ -140,11 +140,12 @@ void main() {
 
         for (uint _i = 0u; _i < nsegments; ++_i) {
 
-            prev_points = cur_points;
-            prev_npoints = cur_npoints;
 
             add_segment(int(prev_npoints), prev_points, int(cur_npoints), cur_points,
                         int(s_npoints), point_index, cur_color, p);
+
+            prev_points = cur_points;
+            prev_npoints = cur_npoints;
 
             cur_points = point_index;
             cur_npoints = s_npoints;

@@ -1,4 +1,6 @@
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 #include <search.h>
 
@@ -10,11 +12,10 @@
 /* Figure out something. */
 #endif
 
-
 #include "msdfgl.h"
+#include "msdfgl_serializer.h"
 
 #include "_msdfgl_shaders.h"
-
 
 int comparator(const void *a, const void *b) {
     return ((map_elem_t *)a)->key - ((map_elem_t *)b)->key;
@@ -27,7 +28,8 @@ int msdfgl_map_create(msdfgl_map_t *map, size_t chunk) {
 
     map->elems = (msdfgl_elem_list_t *)malloc(sizeof(msdfgl_elem_list_t) +
                                               map->chunk_size * sizeof(map_elem_t));
-    if (!map->elems) return -1;
+    if (!map->elems)
+        return -1;
     map->elems->next = NULL;
     map->cur_list = map->elems;
     return 0;
@@ -38,7 +40,8 @@ map_elem_t *msdfgl_map_insert(msdfgl_map_t *map, int key) {
         /* Allocate a new list */
         msdfgl_elem_list_t *l = (msdfgl_elem_list_t *)malloc(
             sizeof(msdfgl_elem_list_t) + map->chunk_size * sizeof(map_elem_t));
-        if (!l) return NULL;
+        if (!l)
+            return NULL;
         l->next = NULL;
         map->cur_list->next = l;
         map->cur_list = l;
@@ -73,6 +76,8 @@ typedef struct msdfgl_index_entry {
 } msdfgl_index_entry;
 
 struct _msdfgl_context {
+    FT_Library ft_library;
+
     GLuint gen_shader;
 
     GLint _atlas_projection_uniform;
@@ -151,6 +156,12 @@ msdfgl_context_t msdfgl_create_context() {
 
     if (!ctx)
         return NULL;
+
+    FT_Error error = FT_Init_FreeType(&ctx->ft_library);
+    if (error) {
+        free(ctx);
+        return NULL;
+    }
 
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &ctx->_max_texture_size);
 
@@ -239,14 +250,14 @@ msdfgl_context_t msdfgl_create_context() {
     return ctx;
 }
 
-msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name,
-                                 double range, double scale, int texture_size) {
+msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, double range,
+                               double scale, int texture_size) {
 
     msdfgl_font_t f = (msdfgl_font_t)malloc(sizeof(struct _msdfgl_font) * 2);
     if (!f)
         return NULL;
 
-    f->_msdf_font = msdf_load_font(font_name);
+    FT_New_Face(ctx->ft_library, font_name, 0, &f->face);
 
     f->scale = scale;
     f->range = range;
@@ -261,6 +272,11 @@ msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name,
     f->_texture_height = 0;
     f->_direct_lookup_upper_limit = 0;
     f->atlas_padding = 2;
+
+    float ascender = f->face->ascender / 64.0;
+    float descender = f->face->descender / 64.0;
+    f->vertical_advance = (ascender - descender);
+
     msdfgl_map_create(&f->character_index, 256);
 
     glGenBuffers(1, &f->_meta_input_buffer);
@@ -292,7 +308,6 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     msdfgl_index_entry *atlas_index = NULL;
     void *point_data = NULL, *metadata = NULL;
 
-
     /* We will start with a square texture. */
     int new_texture_height = font->_texture_height ? font->_texture_height : 1;
     int new_index_size = font->_nallocated ? font->_nallocated : 1;
@@ -311,28 +326,33 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
 
     size_t meta_size_sum = 0, point_size_sum = 0;
     for (size_t i = 0; i <= end - start; ++i) {
-        msdf_glyph_buffer_size(font->_msdf_font, start + i, &meta_sizes[i],
-                               &point_sizes[i]);
+        /* msdf_glyph_buffer_size(font->_msdf_font, start + i, &meta_sizes[i], */
+        /*                        &point_sizes[i]); */
+        msdfgl_glyph_buffer_size(font->face, start + i, &meta_sizes[i], &point_sizes[i]);
+
         meta_size_sum += meta_sizes[i];
         point_size_sum += point_sizes[i];
     }
 
     /* Allocate the calculated amount. */
-    if (!(point_data = malloc(point_size_sum))) 
+    if (!(point_data = malloc(point_size_sum)))
         goto error;
     if (!(metadata = malloc(meta_size_sum)))
         goto error;
 
     /* Serialize the glyphs into RAM. */
-    font->vertical_advance = font->_msdf_font->height;
     char *meta_ptr = metadata;
     char *point_ptr = point_data;
     for (size_t i = 0; i <= end - start; ++i) {
         float glyph_width, glyph_height, buffer_width, buffer_height;
         float bearing_x, bearing_y, advance;
-        msdf_serialize_glyph(font->_msdf_font, start + i, meta_ptr, point_ptr,
-                             &glyph_width, &glyph_height, &bearing_x, &bearing_y,
-                             &advance);
+        /* msdf_serialize_glyph(font->_msdf_font, start + i, meta_ptr, point_ptr, */
+        /* &glyph_width, &glyph_height, &bearing_x, &bearing_y, */
+        /* &advance); */
+        msdfgl_serialize_glyph(font->face, start + i, meta_ptr, (GLfloat *)point_ptr,
+                               &glyph_width, &glyph_height, &bearing_x, &bearing_y,
+                               &advance);
+
         map_elem_t *m = msdfgl_map_insert(&font->character_index, start + i);
         m->index = font->_nglyphs + i;
         m->horizontal_advance = advance;
@@ -348,7 +368,8 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
             font->_offset_x = 1;
             font->_y_increment = 0;
         }
-        font->_y_increment = buffer_height > font->_y_increment ? buffer_height : font->_y_increment;
+        font->_y_increment =
+            buffer_height > font->_y_increment ? buffer_height : font->_y_increment;
 
         atlas_index[i].offset_x = font->_offset_x;
         atlas_index[i].offset_y = font->_offset_y;
@@ -390,8 +411,8 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
         GLuint new_buffer;
         glGenBuffers(1, &new_buffer);
         glBindBuffer(GL_ARRAY_BUFFER, new_buffer);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(msdfgl_index_entry) * new_index_size,
-                     0, GL_STATIC_READ);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(msdfgl_index_entry) * new_index_size, 0,
+                     GL_STATIC_READ);
         if (glGetError() == GL_OUT_OF_MEMORY) {
             glDeleteBuffers(1, &new_buffer);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -409,7 +430,6 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     }
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(msdfgl_index_entry) * font->_nglyphs,
                     index_size, atlas_index);
-
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -484,7 +504,8 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GLfloat framebuffer_projection[4][4];
-    _ortho(0, font->texture_width, 0, font->_texture_height, -1.0, 1.0, framebuffer_projection);
+    _ortho(0, font->texture_width, 0, font->_texture_height, -1.0, 1.0,
+           framebuffer_projection);
     _ortho(-font->texture_width, font->texture_width, -font->_texture_height,
            font->_texture_height, -1.0, 1.0, font->atlas_projection);
 
@@ -564,7 +585,7 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     font->_nglyphs += (end - start + 1);
     retval = end - start;
 
- error:
+error:
 
     if (meta_sizes)
         free(meta_sizes);
@@ -589,6 +610,8 @@ void msdfgl_destroy_context(msdfgl_context_t ctx) {
     if (!ctx)
         return;
 
+    FT_Done_FreeType(ctx->ft_library);
+
     glDeleteProgram(ctx->gen_shader);
     glDeleteProgram(ctx->render_shader);
 
@@ -596,6 +619,8 @@ void msdfgl_destroy_context(msdfgl_context_t ctx) {
 }
 
 void msdfgl_destroy_font(msdfgl_font_t font) {
+
+    FT_Done_Face(font->face);
 
     glDeleteBuffers(1, &font->_meta_input_buffer);
     glDeleteBuffers(1, &font->_point_input_buffer);
@@ -612,7 +637,7 @@ void msdfgl_destroy_font(msdfgl_font_t font) {
 }
 
 void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
-                    GLfloat *projection) {
+                   GLfloat *projection) {
 
     for (int i = 0; i < n; ++i) {
         /* If glyphs 0 - N were generated first, we can optimize by having their
