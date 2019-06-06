@@ -53,5 +53,4 @@ The library includes two shaders:
 ## TODO:
 - Implement `msdfgl_printf`.
 - There are strange artifacs all over the bitmaps, need to figure out where do they come from.
-- Implement edge-coloring in C (so that we do not have to link against a custom version of libmsdfgen).
 - Cross-platform compilation, cross-OpenGL shaders.
