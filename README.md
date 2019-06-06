@@ -37,8 +37,8 @@ font = msdfgl_load_font(context, "/usr/share/fonts/truetype/dejavu/DejaVuSansMon
 /* Loads characters 0-128 onto the textures. This is where all the GPU cycles went. */
 msdfgl_generate_ascii(font);
 
-/*                  4x4 projection-matrix  color       size */
-msdfgl_printf(font, (GLfloat *)projection, 0xffffffff, 18, "Hello, MSFDGL!");
+/*            x    y          size  color       4x4 projection-matrix  */
+msdfgl_printf(0.0, 0.0, font, 18.0, 0xffffffff, (GLfloat *)projection, "Hello, MSFDGL!");
 
 /* Cleanup */
 msdfgl_destroy_font(font);
@@ -51,6 +51,9 @@ The library includes two shaders:
 
 
 ## TODO:
-- Implement `msdfgl_printf`.
 - There are strange artifacs all over the bitmaps, need to figure out where do they come from.
 - Cross-platform compilation, cross-OpenGL shaders.
+- Edge-coloring for teardrop with 1 or 2 segments
+- Support for cubic segments
+- String formatting for `msdfgl_printf`
+

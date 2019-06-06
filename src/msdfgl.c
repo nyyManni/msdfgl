@@ -1,8 +1,9 @@
+#include <search.h>
+#include <locale.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-#include <search.h>
 
 #ifdef __linux__
 
@@ -724,4 +725,48 @@ void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+}
+
+
+
+
+float vmsdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t color,
+                    GLfloat *projection, const char *fmt, va_list argp) {
+    ssize_t bufsize = vsnprintf(NULL, 0, fmt, argp);
+    char *s = malloc(bufsize + 1);
+    if (!s)
+        return x;
+    vsnprintf(s, bufsize + 1, fmt, argp);
+
+    /* TODO: UNICODE SUPPORT */
+    msdfgl_glyph_t *glyphs = malloc(bufsize * sizeof(msdfgl_glyph_t));
+    if (!glyphs)
+        return x;
+    
+    for (int i = 0; i < bufsize; ++i) {
+        glyphs[i].x = x;
+        glyphs[i].y = y;
+        glyphs[i].color = color;
+        glyphs[i].key = (int32_t)s[i];
+        glyphs[i].size = (GLfloat)size;
+        glyphs[i].offset = 0;
+        glyphs[i].skew = 0;
+        glyphs[i].strength = 0.5;
+        
+        map_elem_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
+        x += e->horizontal_advance * size;
+    }
+    msdfgl_render(font, glyphs, bufsize, projection);
+
+    return x;
+}
+
+
+float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t color,
+                    GLfloat *projection, const char *fmt, ...) {
+    va_list argp;
+    va_start(argp, fmt);
+    x = vmsdfgl_printf(x, y, font, size, color, projection, fmt, argp);
+    va_end(argp);
+    return x;
 }

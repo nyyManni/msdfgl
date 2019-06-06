@@ -18,6 +18,7 @@
  * MSDFGL provides a version of that algorithm that runs partially on the GPU,
  * and a higher-level API handling font atlases and textures.
  */
+#include <stdarg.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -222,6 +223,9 @@ int msdfgl_generate_glyph_list(msdfgl_font_t font, int32_t *list, size_t n);
  */
 void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
                    GLfloat *projection);
+
+float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t color,
+                    GLfloat *projection, const char *fmt, ...);
 
 #ifdef __cplusplus
 }
