@@ -30,27 +30,6 @@ extern "C" {
 #endif
 
 typedef struct _msdfgl_context *msdfgl_context_t;
-struct msdfgl_map_t;
-
-typedef struct _map_elem {
-    int key;
-    int index;
-    double horizontal_advance;
-} map_elem_t;
-
-typedef struct _msdfgl_elem_list {
-    struct _msdfgl_elem_list *next;
-    map_elem_t data[];
-} msdfgl_elem_list_t;
-
-typedef struct _msdfgl_map {
-    void *root;
-    size_t chunk_size;
-
-    size_t i;
-    msdfgl_elem_list_t *cur_list;
-    msdfgl_elem_list_t *elems;
-} msdfgl_map_t;
 
 /**
  * Compile shaders and configure uniforms.
@@ -64,80 +43,6 @@ msdfgl_context_t msdfgl_create_context();
  */
 void msdfgl_destroy_context(msdfgl_context_t ctx);
 
-struct _msdfgl_font {
-    char *font_name;
-
-    double scale;
-    double range;
-    int texture_width;
-
-    double vertical_advance;
-    float horizontal_advances[256];
-
-    msdfgl_map_t character_index;
-
-    GLfloat atlas_projection[4][4];
-
-    /**
-     * 2D RGBA atlas texture containing all MSDF-glyph bitmaps.
-     */
-    GLuint atlas_texture;
-    GLuint _atlas_framebuffer;
-
-    /**
-     * 1D buffer containing glyph position information per character in the
-     * atlas texture.
-     */
-    GLuint index_texture;
-    GLuint _index_buffer;
-
-    /**
-     * Amount of glyphs currently rendered on the textures.
-     */
-    size_t _nglyphs;
-
-    /**
-     * The current size of the buffer index texture.
-     */
-    size_t _nallocated;
-
-    /**
-     * The amount of allocated texture height.
-     */
-    int _texture_height;
-
-    /**
-     * MSDFGL context handle.
-     */
-    msdfgl_context_t context;
-
-    /**
-     * FreeType Face handle.
-     */
-    FT_Face face;
-
-    /**
-     * The location in the atlas where the next bitmap would be rendered.
-     */
-    size_t _offset_y;
-    size_t _offset_x;
-    size_t _y_increment;
-
-    /**
-     * Amount of pixels to leave blank between MSDF bitmaps.
-     */
-    int atlas_padding;
-
-    /**
-     * Texture buffer objects for serialized FreeType data input.
-     */
-    GLuint _meta_input_buffer;
-    GLuint _point_input_buffer;
-    GLuint _meta_input_texture;
-    GLuint _point_input_texture;
-
-    int _direct_lookup_upper_limit;
-};
 typedef struct _msdfgl_font *msdfgl_font_t;
 
 /**
@@ -191,6 +96,11 @@ msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, doub
                                double scale, int texture_size);
 
 /**
+ * Get vertical advance of the font with the given size.
+ */
+float msdfgl_vertical_advance(msdfgl_font_t font, float size);
+
+/**
  * Release resources allocated by `msdfgl_load_font`.
  */
 void msdfgl_destroy_font(msdfgl_font_t font);
@@ -227,6 +137,11 @@ void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
 float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t color,
                     GLfloat *projection, const char *fmt, ...);
 
+/* Plumbing commands. */
+/**
+ * Get the atlas texture of the given font.
+ */
+GLuint _msdfgl_atlas_texture(msdfgl_font_t font);
 #ifdef __cplusplus
 }
 #endif
