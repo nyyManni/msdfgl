@@ -18,7 +18,6 @@
  * MSDFGL provides a version of that algorithm that runs partially on the GPU,
  * and a higher-level API handling font atlases and textures.
  */
-#include <stdarg.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
