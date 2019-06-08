@@ -1,4 +1,3 @@
-#version 320 es
 
 #define IDX_CURR 0
 #define IDX_SHAPE 1

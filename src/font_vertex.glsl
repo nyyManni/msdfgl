@@ -1,4 +1,3 @@
-#version 320 es
 
 layout (location = 0) in vec2 vertex;
 layout (location = 1) in uvec4 glyph_color;

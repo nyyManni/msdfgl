@@ -233,17 +233,19 @@ int compile_shader(const char *source, GLenum type, GLuint *shader) {
         fprintf(stderr, "failed to create shader\n");
     }
 
-    glShaderSource(*shader, 1, (const char *const *)&source, NULL);
+    const char *src[] = {"#version 320 es\n", source};
+
+    glShaderSource(*shader, 2, src, NULL);
     glCompileShader(*shader);
 
     GLint status;
     glGetShaderiv(*shader, GL_COMPILE_STATUS, &status);
     if (!status) {
-        return 0;
         char log[1000];
         GLsizei len;
         glGetShaderInfoLog(*shader, 1000, &len, log);
         fprintf(stderr, "Error: compiling: %*s\n", len, log);
+        return 0;
     }
 
     return 1;
@@ -831,7 +833,7 @@ float vmsdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t c
     msdfgl_glyph_t *glyphs = malloc(bufsize * sizeof(msdfgl_glyph_t));
     if (!glyphs)
         return x;
-    
+
     for (int i = 0; i < bufsize; ++i) {
         glyphs[i].x = x;
         glyphs[i].y = y;
@@ -841,7 +843,7 @@ float vmsdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t c
         glyphs[i].offset = 0;
         glyphs[i].skew = 0;
         glyphs[i].strength = 0.5;
-        
+
         map_elem_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
         x += e->horizontal_advance * size;
     }
