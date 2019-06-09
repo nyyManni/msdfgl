@@ -138,8 +138,18 @@ int msdfgl_generate_glyph_list(msdfgl_font_t font, int32_t *list, size_t n);
 void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
                    GLfloat *projection);
 
+/**
+ * Print a formatted string in coordinates `x, y`
+ */
 float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t color,
                     GLfloat *projection, const char *fmt, ...);
+
+/**
+ * Wide-character version of `msdfgl_printf`. NOTE: Maximum of 255 characters
+ * can be rendered with `msdfgl_wrprintf` due to a limitation in swprintf.
+ */
+float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t color,
+                     GLfloat *projection, const wchar_t *fmt, ...);
 
 /* Plumbing commands. */
 /**

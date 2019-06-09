@@ -1,4 +1,5 @@
 #include <search.h>
+#include <wchar.h>
 #include <locale.h>
 
 #include <ft2build.h>
@@ -16,7 +17,8 @@
 #include "msdfgl.h"
 #include "msdfgl_serializer.h"
 
-#include "_msdfgl_shaders.h"
+#include <_msdfgl_shaders.h> /* Auto-generated */
+
 struct msdfgl_map_t;
 
 
@@ -835,10 +837,11 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
     vsnprintf(s, bufsize + 1, fmt, argp);
     va_end(argp);
 
-    /* TODO: UNICODE SUPPORT */
     msdfgl_glyph_t *glyphs = malloc(bufsize * sizeof(msdfgl_glyph_t));
-    if (!glyphs)
+    if (!glyphs) {
+        free(s);
         return x;
+    }
 
     for (int i = 0; i < bufsize; ++i) {
         glyphs[i].x = x;
@@ -857,9 +860,56 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
     }
     msdfgl_render(font, glyphs, bufsize, projection);
     free(glyphs);
+    free(s);
 
     return x;
 }
+
+float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t color,
+                    GLfloat *projection, const wchar_t *fmt, ...) {
+    va_list argp;
+    va_start(argp, fmt);
+
+    /* vswprintf does not support NULL as the buffer to calculate needed size */
+    static wchar_t arr[255];
+    ssize_t bufsize = vswprintf(arr, 255, fmt, argp);
+    va_end(argp);
+
+    wchar_t *s = malloc((bufsize + 1)* sizeof(wchar_t));
+    if (!s)
+        return x;
+    va_start(argp, fmt);
+    vswprintf(s, bufsize + 1, fmt, argp);
+    va_end(argp);
+
+    msdfgl_glyph_t *glyphs = malloc(bufsize * sizeof(msdfgl_glyph_t));
+    if (!glyphs) {
+        free(s);
+        return x;
+    }
+
+    for (int i = 0; i < bufsize; ++i) {
+        glyphs[i].x = x;
+        glyphs[i].y = y;
+        glyphs[i].color = color;
+        glyphs[i].key = (int32_t)s[i];
+        glyphs[i].size = (GLfloat)size;
+        glyphs[i].offset = 0;
+        glyphs[i].skew = 0;
+        glyphs[i].strength = 0.5;
+
+        map_elem_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
+        if (!e) continue;
+
+        x += e->horizontal_advance * size;
+    }
+    msdfgl_render(font, glyphs, bufsize, projection);
+    free(glyphs);
+    free(s);
+
+    return x;
+}
+
 
 float msdfgl_vertical_advance(msdfgl_font_t font, float size) {
     return font->vertical_advance * size;

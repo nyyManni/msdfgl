@@ -31,7 +31,7 @@ install:  install-lib install-header
 install-lib: lib
 	cp src/libmsdfgl.so /usr/local/lib/
 
-install-header: src/msdfgl.h
+install-header: include/msdfgl.h
 	cp $< /usr/local/include/
 
 
