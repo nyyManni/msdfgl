@@ -65,5 +65,4 @@ The library includes two shaders:
 - Cross-platform compilation, cross-OpenGL shaders.
 - Edge-coloring for teardrop with 1 or 2 segments
 - Support for cubic segments
-- String formatting for `msdfgl_printf`
 

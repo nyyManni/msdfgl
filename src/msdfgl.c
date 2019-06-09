@@ -821,13 +821,19 @@ void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
 }
 
 
-float vmsdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t color,
-                    GLfloat *projection, const char *fmt, va_list argp) {
+float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t color,
+                    GLfloat *projection, const char *fmt, ...) {
+    va_list argp;
+    va_start(argp, fmt);
     ssize_t bufsize = vsnprintf(NULL, 0, fmt, argp);
+    va_end(argp);
+
     char *s = malloc(bufsize + 1);
     if (!s)
         return x;
+    va_start(argp, fmt);
     vsnprintf(s, bufsize + 1, fmt, argp);
+    va_end(argp);
 
     /* TODO: UNICODE SUPPORT */
     msdfgl_glyph_t *glyphs = malloc(bufsize * sizeof(msdfgl_glyph_t));
@@ -852,16 +858,6 @@ float vmsdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t c
     msdfgl_render(font, glyphs, bufsize, projection);
     free(glyphs);
 
-    return x;
-}
-
-
-float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t color,
-                    GLfloat *projection, const char *fmt, ...) {
-    va_list argp;
-    va_start(argp, fmt);
-    x = vmsdfgl_printf(x, y, font, size, color, projection, fmt, argp);
-    va_end(argp);
     return x;
 }
 
