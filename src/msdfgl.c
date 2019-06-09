@@ -48,7 +48,6 @@ struct _msdfgl_font {
     int texture_width;
 
     double vertical_advance;
-    float horizontal_advances[256];
 
     msdfgl_map_t character_index;
 
