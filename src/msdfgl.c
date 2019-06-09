@@ -368,6 +368,7 @@ msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, doub
     f->_nallocated = 0;
     f->_offset_x = 1;
     f->_offset_y = 1;
+    f->_y_increment = 0;
     f->_texture_height = 0;
     f->_direct_lookup_upper_limit = 0;
     f->atlas_padding = 2;
