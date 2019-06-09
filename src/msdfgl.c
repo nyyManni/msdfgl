@@ -845,6 +845,8 @@ float vmsdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t c
         glyphs[i].strength = 0.5;
 
         map_elem_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
+        if (!e) continue;
+
         x += e->horizontal_advance * size;
     }
     msdfgl_render(font, glyphs, bufsize, projection);
