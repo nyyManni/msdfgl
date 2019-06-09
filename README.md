@@ -25,6 +25,9 @@ Both the atlas and index textures grow as more glyphs are rendered. The user can
 
 The lib will be installed in `/usr/local/lib`, and the header into `/usr/local/include`.
 ```sh
+mkdir build
+cd build
+cmake ..
 make
 sudo make install
 ```
