@@ -21,6 +21,7 @@
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include FT_OUTLINE_H
 
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
