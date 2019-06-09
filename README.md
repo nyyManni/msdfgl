@@ -50,6 +50,10 @@ msdfgl_printf(0.0, 0.0, font, 18.0, 0xffffffff, (GLfloat *)projection, "Hello, M
 msdfgl_destroy_font(font);
 msdfgl_destroy_context(context);
 ```
+Then, link your binary against msdfgl:
+```sh
+gcc ... -lmsdfgl
+```
 
 The library includes two shaders:
 - Generator shader - heavy lifting, generates the MSDF bitmaps.
