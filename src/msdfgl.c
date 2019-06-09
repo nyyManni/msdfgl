@@ -17,7 +17,7 @@
 #include "msdfgl.h"
 #include "msdfgl_serializer.h"
 
-#include <_msdfgl_shaders.h> /* Auto-generated */
+#include "_msdfgl_shaders.h" /* Auto-generated */
 
 struct msdfgl_map_t;
 
