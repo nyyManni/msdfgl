@@ -850,6 +850,7 @@ float vmsdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t c
         x += e->horizontal_advance * size;
     }
     msdfgl_render(font, glyphs, bufsize, projection);
+    free(glyphs);
 
     return x;
 }
