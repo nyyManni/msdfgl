@@ -186,8 +186,7 @@ void switch_color(enum Color *color, unsigned long long *seed, enum Color *_bann
 }
 
 int msdfgl_serialize_glyph(FT_Face face, int code, char *meta_buffer,
-                           GLfloat *point_buffer, GLfloat *width, GLfloat *height,
-                           GLfloat *bearing_x, GLfloat *bearing_y, GLfloat *advance) {
+                           GLfloat *point_buffer) {
 
     if (FT_Load_Char(face, code, FT_LOAD_NO_SCALE))
         return -1;
@@ -375,21 +374,6 @@ int msdfgl_serialize_glyph(FT_Face face, int code, char *meta_buffer,
         }
         point_ptr += 1;
     }
-
-    /* *width = (float)face->glyph->metrics.width / SERIALIZER_SCALE; */
-    /* *height = (float)face->glyph->metrics.height / SERIALIZER_SCALE; */
-
-    /* *bearing_x = (float)face->glyph->metrics.horiBearingX / SERIALIZER_SCALE; */
-    /* *bearing_y = (float)face->glyph->metrics.horiBearingY / SERIALIZER_SCALE; */
-
-    /* *advance = (float)face->glyph->metrics.horiAdvance / SERIALIZER_SCALE; */
-    *width = (float)face->glyph->metrics.width;
-    *height = (float)face->glyph->metrics.height;
-
-    *bearing_x = (float)face->glyph->metrics.horiBearingX;
-    *bearing_y = (float)face->glyph->metrics.horiBearingY;
-
-    *advance = (float)face->glyph->metrics.horiAdvance;
 
     return 0;
 }

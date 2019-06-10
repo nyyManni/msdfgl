@@ -1,10 +1,9 @@
+#include <locale.h>
 #include <search.h>
 #include <wchar.h>
-#include <locale.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
-
 
 #ifdef __linux__
 
@@ -20,7 +19,6 @@
 #include "_msdfgl_shaders.h" /* Auto-generated */
 
 struct msdfgl_map_t;
-
 
 typedef struct _map_elem {
     int key;
@@ -374,10 +372,9 @@ msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, doub
     f->_texture_height = 0;
     f->_direct_lookup_upper_limit = 0;
     f->atlas_padding = 2;
+    printf("%d\n", f->face->units_per_EM);  // 2048
 
-    float ascender = f->face->ascender / SERIALIZER_SCALE;
-    float descender = f->face->descender / SERIALIZER_SCALE;
-    f->vertical_advance = (ascender - descender);
+    f->vertical_advance = (f->face->ascender - f->face->descender);
 
     msdfgl_map_create(&f->character_index, 256);
 
@@ -444,18 +441,18 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     char *meta_ptr = metadata;
     char *point_ptr = point_data;
     for (size_t i = 0; i <= end - start; ++i) {
-        float glyph_width, glyph_height, buffer_width, buffer_height;
-        float bearing_x, bearing_y, advance;
-        msdfgl_serialize_glyph(font->face, start + i, meta_ptr, (GLfloat *)point_ptr,
-                               &glyph_width, &glyph_height, &bearing_x, &bearing_y,
-                               &advance);
+        float buffer_width, buffer_height;
+        msdfgl_serialize_glyph(font->face, start + i, meta_ptr, (GLfloat *)point_ptr);
 
         map_elem_t *m = msdfgl_map_insert(&font->character_index, start + i);
         m->index = font->_nglyphs + i;
-        m->horizontal_advance = advance / SERIALIZER_SCALE;
+        m->horizontal_advance = font->face->glyph->metrics.horiAdvance;
 
-        buffer_width = ((glyph_width / SERIALIZER_SCALE) + font->range) * font->scale;
-        buffer_height = ((glyph_height / SERIALIZER_SCALE) + font->range) * font->scale;
+        buffer_width = font->face->glyph->metrics.width / SERIALIZER_SCALE + font->range;
+        buffer_height =
+            font->face->glyph->metrics.height / SERIALIZER_SCALE + font->range;
+        buffer_width *= font->scale;
+        buffer_height *= font->scale;
 
         meta_ptr += meta_sizes[i];
         point_ptr += point_sizes[i];
@@ -472,10 +469,10 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
         atlas_index[i].offset_y = font->_offset_y;
         atlas_index[i].size_x = buffer_width;
         atlas_index[i].size_y = buffer_height;
-        atlas_index[i].bearing_x = bearing_x / 1.0;
-        atlas_index[i].bearing_y = bearing_y / 1.0;
-        atlas_index[i].glyph_width = glyph_width / 1.0;
-        atlas_index[i].glyph_height = glyph_height / 1.0;
+        atlas_index[i].bearing_x = font->face->glyph->metrics.horiBearingX;
+        atlas_index[i].bearing_y = font->face->glyph->metrics.horiBearingY;
+        atlas_index[i].glyph_width = font->face->glyph->metrics.width;
+        atlas_index[i].glyph_height = font->face->glyph->metrics.height;
 
         font->_offset_x += buffer_width + font->atlas_padding;
 
@@ -650,8 +647,9 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
         GLfloat bounding_box[] = {0, 0, w, 0, 0, h, 0, h, w, 0, w, h};
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(bounding_box), bounding_box);
 
-        glUniform2f(ctx->_translate_uniform, -g.bearing_x / SERIALIZER_SCALE + font->range / 2.0,
-                    (g.glyph_height - g.bearing_y) / SERIALIZER_SCALE + font->range / 2.0);
+        glUniform2f(
+            ctx->_translate_uniform, -g.bearing_x / SERIALIZER_SCALE + font->range / 2.0,
+            (g.glyph_height - g.bearing_y) / SERIALIZER_SCALE + font->range / 2.0);
 
         glUniform2f(ctx->_texture_offset_uniform, g.offset_x, g.offset_y);
         glUniform1i(ctx->_meta_offset_uniform, meta_offset);
@@ -822,7 +820,6 @@ void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
     glBindVertexArray(0);
 }
 
-
 float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t color,
                     GLfloat *projection, const char *fmt, ...) {
     va_list argp;
@@ -854,9 +851,10 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
         glyphs[i].strength = 0.5;
 
         map_elem_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
-        if (!e) continue;
+        if (!e)
+            continue;
 
-        x += e->horizontal_advance * size;
+        x += e->horizontal_advance * (size * 150.0 / 72.0) / 2048;
     }
     msdfgl_render(font, glyphs, bufsize, projection);
     free(glyphs);
@@ -866,7 +864,7 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
 }
 
 float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t color,
-                    GLfloat *projection, const wchar_t *fmt, ...) {
+                     GLfloat *projection, const wchar_t *fmt, ...) {
     va_list argp;
     va_start(argp, fmt);
 
@@ -875,7 +873,7 @@ float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t c
     ssize_t bufsize = vswprintf(arr, 255, fmt, argp);
     va_end(argp);
 
-    wchar_t *s = malloc((bufsize + 1)* sizeof(wchar_t));
+    wchar_t *s = malloc((bufsize + 1) * sizeof(wchar_t));
     if (!s)
         return x;
     va_start(argp, fmt);
@@ -899,9 +897,10 @@ float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t c
         glyphs[i].strength = 0.5;
 
         map_elem_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
-        if (!e) continue;
+        if (!e)
+            continue;
 
-        x += e->horizontal_advance * size;
+        x += e->horizontal_advance * (size * 150.0 / 72.0) / 2048;
     }
     msdfgl_render(font, glyphs, bufsize, projection);
     free(glyphs);
@@ -910,11 +909,8 @@ float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t c
     return x;
 }
 
-
 float msdfgl_vertical_advance(msdfgl_font_t font, float size) {
-    return font->vertical_advance * size;
+    return font->vertical_advance * (size * 150.0 / 72.0) / 2048;
 }
 
-GLuint _msdfgl_atlas_texture(msdfgl_font_t font) {
-    return font->atlas_texture;
-}
+GLuint _msdfgl_atlas_texture(msdfgl_font_t font) { return font->atlas_texture; }

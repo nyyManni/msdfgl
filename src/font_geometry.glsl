@@ -25,7 +25,9 @@ uniform samplerBuffer font_index;
 void main() {
     text_color = gs_in[0].color;
     strength = gs_in[0].strength;
-    float font_size = gs_in[0].size / 64.0;
+    float dpi = 150.0;
+    float font_size = (gs_in[0].size * dpi / 72.0) / 2048.0;
+    // float font_size = gs_in[0].size / 64.0
     int _offset = 8 * gs_in[0].glyph;
     vec2 text_offset = vec2(texelFetch(font_index, _offset + 0).r,
                             texelFetch(font_index, _offset + 1).r);
