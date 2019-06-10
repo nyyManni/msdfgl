@@ -372,7 +372,6 @@ msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, doub
     f->_texture_height = 0;
     f->_direct_lookup_upper_limit = 0;
     f->atlas_padding = 2;
-    printf("%d\n", f->face->units_per_EM);  // 2048
 
     f->vertical_advance = (f->face->ascender - f->face->descender);
 
@@ -854,7 +853,7 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
         if (!e)
             continue;
 
-        x += e->horizontal_advance * (size * 150.0 / 72.0) / 2048;
+        x += e->horizontal_advance * (size * 150.0 / 72.0) / font->face->units_per_EM;
     }
     msdfgl_render(font, glyphs, bufsize, projection);
     free(glyphs);
@@ -900,7 +899,7 @@ float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t c
         if (!e)
             continue;
 
-        x += e->horizontal_advance * (size * 150.0 / 72.0) / 2048;
+        x += e->horizontal_advance * (size * 150.0 / 72.0) / font->face->units_per_EM;
     }
     msdfgl_render(font, glyphs, bufsize, projection);
     free(glyphs);
@@ -910,7 +909,7 @@ float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t c
 }
 
 float msdfgl_vertical_advance(msdfgl_font_t font, float size) {
-    return font->vertical_advance * (size * 150.0 / 72.0) / 2048;
+    return font->vertical_advance * (size * 150.0 / 72.0) / font->face->units_per_EM;
 }
 
 GLuint _msdfgl_atlas_texture(msdfgl_font_t font) { return font->atlas_texture; }
