@@ -46,6 +46,8 @@ add_custom_command(
 
 add_library(msdfgl SHARED src/msdfgl.c src/msdfgl_serializer.c ${SHADER_HEADER})
 if (APPLE)
+
+  # We make it the library user's responsibility to link against some OpenGL.
   set_target_properties(msdfgl PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
   add_definitions(-DGL_SILENCE_DEPRECATION)
 endif (APPLE)
