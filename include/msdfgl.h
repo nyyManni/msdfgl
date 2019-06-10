@@ -81,13 +81,15 @@ typedef struct _msdfgl_glyph {
 
     /**
      * The amount of "lean" on the character. Positive leans to the right,
-     * negative leans to the left.
+     * negative leans to the left. Skew can create /italics/ effect without 
+     * loading a separate font atlas.
      */
     GLfloat skew;
 
     /**
      * The "boldness" of the character. 0.5 is normal strength, lower is thinner
-     * and higher is thicker.
+     * and higher is thicker. Strength can create *bold* effect without loading
+     * a separate font atlas.
      */
     GLfloat strength;
 
@@ -155,15 +157,19 @@ float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t c
  * Set the DPI for the current session. Following draw calls will use the new DPI.
  * The DPI value is a vector, which allows for rendering text with a monitor which
  * has non-square pixels.
- * The default DPI is (72, 72)
+ * The default DPI is (72, 72).
  */
 void msdfgl_set_dpi(msdfgl_context_t context, float horizontal, float vertical);
 
-/* Plumbing commands. */
+/* Plumbing commands. In case you want to build your own renderer. */
 /**
  * Get the atlas texture of the given font.
  */
 GLuint _msdfgl_atlas_texture(msdfgl_font_t font);
+/**
+ * Get the index texture of the given font.
+ */
+GLuint _msdfgl_index_texture(msdfgl_font_t font);
 #ifdef __cplusplus
 }
 #endif
