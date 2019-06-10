@@ -17,6 +17,8 @@ out float strength;
 
 uniform mat4 projection;
 uniform float padding;
+uniform float units_per_em;
+uniform vec2 dpi;
 
 precision mediump samplerBuffer;
 uniform samplerBuffer font_index;
@@ -25,10 +27,7 @@ uniform samplerBuffer font_index;
 void main() {
     text_color = gs_in[0].color;
     strength = gs_in[0].strength;
-    // float dpi = 150.0;
-    float units_per_em = 2048.0;
-    vec2 dpi = vec2(150.0, 150.0);
-    
+
     vec4 font_size = vec4(gs_in[0].size * dpi / 72.0 / units_per_em, 1.0, 1.0);
 
     int _offset = 8 * gs_in[0].glyph;
@@ -49,7 +48,7 @@ void main() {
 
     vec4 p = gl_in[0].gl_Position + vec4(0.0, gs_in[0].y_offset, 0.0, 0.0);
     vec4 _p = p;
-    
+
 
     // BL
     _p = p + bearing + glyph_height - padding_x + padding_y;

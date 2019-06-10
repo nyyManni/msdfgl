@@ -151,6 +151,14 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
 float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t color,
                      GLfloat *projection, const wchar_t *fmt, ...);
 
+/**
+ * Set the DPI for the current session. Following draw calls will use the new DPI.
+ * The DPI value is a vector, which allows for rendering text with a monitor which
+ * has non-square pixels.
+ * The default DPI is (72, 72)
+ */
+void msdfgl_set_dpi(msdfgl_context_t context, float horizontal, float vertical);
+
 /* Plumbing commands. */
 /**
  * Get the atlas texture of the given font.

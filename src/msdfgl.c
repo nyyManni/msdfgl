@@ -175,6 +175,8 @@ typedef struct msdfgl_index_entry {
 struct _msdfgl_context {
     FT_Library ft_library;
 
+    GLfloat dpi[2];
+
     GLuint gen_shader;
 
     GLint _atlas_projection_uniform;
@@ -198,6 +200,8 @@ struct _msdfgl_context {
     GLint _atlas_uniform;
     GLint _padding_uniform;
     GLint _offset_uniform;
+    GLint _dpi_uniform;
+    GLint _units_per_em_uniform;
 
     GLint _max_texture_size;
 };
@@ -338,6 +342,11 @@ msdfgl_context_t msdfgl_create_context() {
     ctx->_index_uniform = glGetUniformLocation(ctx->render_shader, "font_index");
     ctx->_atlas_uniform = glGetUniformLocation(ctx->render_shader, "font_atlas");
     ctx->_padding_uniform = glGetUniformLocation(ctx->render_shader, "padding");
+    ctx->_dpi_uniform = glGetUniformLocation(ctx->render_shader, "dpi");
+    ctx->_units_per_em_uniform = glGetUniformLocation(ctx->render_shader, "units_per_em");
+
+    ctx->dpi[0] = 72.0;
+    ctx->dpi[1] = 72.0;
 
     if ((err = glGetError())) {
         fprintf(stderr, "error: %x \n", err);
@@ -794,6 +803,8 @@ void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
 
     glUniformMatrix4fv(font->context->window_projection_uniform, 1, GL_FALSE, projection);
     glUniform1f(font->context->_padding_uniform, (GLfloat)(font->range / 2.0));
+    glUniform1f(font->context->_units_per_em_uniform, (GLfloat)font->face->units_per_EM);
+    glUniform2f(font->context->_dpi_uniform, font->context->dpi[0], font->context->dpi[1]);
 
     /* Render the glyphs. */
     glDrawArrays(GL_POINTS, 0, n);
@@ -853,7 +864,7 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
         if (!e)
             continue;
 
-        x += e->horizontal_advance * (size * 150.0 / 72.0) / font->face->units_per_EM;
+        x += e->horizontal_advance * (size * font->context->dpi[0] / 72.0) / font->face->units_per_EM;
     }
     msdfgl_render(font, glyphs, bufsize, projection);
     free(glyphs);
@@ -899,7 +910,7 @@ float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t c
         if (!e)
             continue;
 
-        x += e->horizontal_advance * (size * 150.0 / 72.0) / font->face->units_per_EM;
+        x += e->horizontal_advance * (size * font->context->dpi[0] / 72.0) / font->face->units_per_EM;
     }
     msdfgl_render(font, glyphs, bufsize, projection);
     free(glyphs);
@@ -909,7 +920,12 @@ float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t c
 }
 
 float msdfgl_vertical_advance(msdfgl_font_t font, float size) {
-    return font->vertical_advance * (size * 150.0 / 72.0) / font->face->units_per_EM;
+    return font->vertical_advance * (size * font->context->dpi[1] / 72.0) / font->face->units_per_EM;
 }
 
 GLuint _msdfgl_atlas_texture(msdfgl_font_t font) { return font->atlas_texture; }
+
+void msdfgl_set_dpi(msdfgl_context_t context, float horizontal, float vertical) {
+    context->dpi[0] = horizontal;
+    context->dpi[1] = vertical;
+}
