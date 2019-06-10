@@ -81,7 +81,7 @@ typedef struct _msdfgl_glyph {
 
     /**
      * The amount of "lean" on the character. Positive leans to the right,
-     * negative leans to the left. Skew can create /italics/ effect without 
+     * negative leans to the left. Skew can create /italics/ effect without
      * loading a separate font atlas.
      */
     GLfloat skew;
@@ -161,7 +161,14 @@ float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t c
  */
 void msdfgl_set_dpi(msdfgl_context_t context, float horizontal, float vertical);
 
+
 /* Plumbing commands. In case you want to build your own renderer. */
+/**
+ * Generates an orthographic projection (similar to glm's ortho).
+ */
+void _msdfgl_ortho(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top,
+                   GLfloat nearVal, GLfloat farVal, GLfloat dest[][4]);
+
 /**
  * Get the atlas texture of the given font.
  */

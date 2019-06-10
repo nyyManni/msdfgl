@@ -211,8 +211,8 @@ GLfloat _MAT4_ZERO_INIT[4][4] = {{0.0f, 0.0f, 0.0f, 0.0f},
                                  {0.0f, 0.0f, 0.0f, 0.0f},
                                  {0.0f, 0.0f, 0.0f, 0.0f}};
 
-static inline void _ortho(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top,
-                          GLfloat nearVal, GLfloat farVal, GLfloat dest[][4]) {
+void _msdfgl_ortho(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top,
+                   GLfloat nearVal, GLfloat farVal, GLfloat dest[][4]) {
     GLfloat rl, tb, fn;
 
     memcpy(dest, _MAT4_ZERO_INIT, sizeof(_MAT4_ZERO_INIT));
@@ -605,10 +605,10 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GLfloat framebuffer_projection[4][4];
-    _ortho(0, font->texture_width, 0, font->_texture_height, -1.0, 1.0,
-           framebuffer_projection);
-    _ortho(-font->texture_width, font->texture_width, -font->_texture_height,
-           font->_texture_height, -1.0, 1.0, font->atlas_projection);
+    _msdfgl_ortho(0, font->texture_width, 0, font->_texture_height, -1.0, 1.0,
+                  framebuffer_projection);
+    _msdfgl_ortho(-font->texture_width, font->texture_width, -font->_texture_height,
+                  font->_texture_height, -1.0, 1.0, font->atlas_projection);
 
     glUseProgram(ctx->gen_shader);
     glUniform1i(ctx->metadata_uniform, 0);

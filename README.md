@@ -37,6 +37,7 @@ sudo make install
 ```
 
 ## Usage:
+- requires an active OpenGL context - msdfgl will not create it
 ```C
 #include <msdfgl.h>
 
