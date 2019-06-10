@@ -132,8 +132,8 @@ struct __glyph_data_ctx {
 static int __add_contour(const FT_Vector *to, void *user) {
     struct __glyph_data_ctx *ctx = (struct __glyph_data_ctx *)user;
 
-    ctx->point_buffer[ctx->point_index++] = to->x / 64.0;
-    ctx->point_buffer[ctx->point_index++] = to->y / 64.0;
+    ctx->point_buffer[ctx->point_index++] = to->x / SERIALIZER_SCALE;
+    ctx->point_buffer[ctx->point_index++] = to->y / SERIALIZER_SCALE;
 
     ctx->meta_buffer[0] += 1;                /* Increase the number of contours. */
     ctx->meta_buffer[ctx->meta_index++] = 0; /* Set winding to zero */
@@ -145,8 +145,8 @@ static int __add_contour(const FT_Vector *to, void *user) {
 }
 static int __add_linear(const FT_Vector *to, void *user) {
     struct __glyph_data_ctx *ctx = (struct __glyph_data_ctx *)user;
-    ctx->point_buffer[ctx->point_index++] = to->x / 64.0;
-    ctx->point_buffer[ctx->point_index++] = to->y / 64.0;
+    ctx->point_buffer[ctx->point_index++] = to->x / SERIALIZER_SCALE;
+    ctx->point_buffer[ctx->point_index++] = to->y / SERIALIZER_SCALE;
 
     ctx->meta_buffer[ctx->meta_index++] = 0; /* Set color to 0 */
     ctx->meta_buffer[ctx->meta_index++] = 2;
@@ -155,10 +155,10 @@ static int __add_linear(const FT_Vector *to, void *user) {
 }
 static int __add_quad(const FT_Vector *control, const FT_Vector *to, void *user) {
     struct __glyph_data_ctx *ctx = (struct __glyph_data_ctx *)user;
-    ctx->point_buffer[ctx->point_index++] = control->x / 64.0;
-    ctx->point_buffer[ctx->point_index++] = control->y / 64.0;
-    ctx->point_buffer[ctx->point_index++] = to->x / 64.0;
-    ctx->point_buffer[ctx->point_index++] = to->y / 64.0;
+    ctx->point_buffer[ctx->point_index++] = control->x / SERIALIZER_SCALE;
+    ctx->point_buffer[ctx->point_index++] = control->y / SERIALIZER_SCALE;
+    ctx->point_buffer[ctx->point_index++] = to->x / SERIALIZER_SCALE;
+    ctx->point_buffer[ctx->point_index++] = to->y / SERIALIZER_SCALE;
 
     ctx->meta_buffer[ctx->meta_index++] = 0; /* Set color to 0 */
     ctx->meta_buffer[ctx->meta_index++] = 3;
@@ -376,13 +376,20 @@ int msdfgl_serialize_glyph(FT_Face face, int code, char *meta_buffer,
         point_ptr += 1;
     }
 
-    *width = (float)face->glyph->metrics.width / 64.0;
-    *height = (float)face->glyph->metrics.height / 64.0;
+    /* *width = (float)face->glyph->metrics.width / SERIALIZER_SCALE; */
+    /* *height = (float)face->glyph->metrics.height / SERIALIZER_SCALE; */
 
-    *bearing_x = (float)face->glyph->metrics.horiBearingX / 64.0;
-    *bearing_y = (float)face->glyph->metrics.horiBearingY / 64.0;
+    /* *bearing_x = (float)face->glyph->metrics.horiBearingX / SERIALIZER_SCALE; */
+    /* *bearing_y = (float)face->glyph->metrics.horiBearingY / SERIALIZER_SCALE; */
 
-    *advance = (float)face->glyph->metrics.horiAdvance / 64.0;
+    /* *advance = (float)face->glyph->metrics.horiAdvance / SERIALIZER_SCALE; */
+    *width = (float)face->glyph->metrics.width;
+    *height = (float)face->glyph->metrics.height;
+
+    *bearing_x = (float)face->glyph->metrics.horiBearingX;
+    *bearing_y = (float)face->glyph->metrics.horiBearingY;
+
+    *advance = (float)face->glyph->metrics.horiAdvance;
 
     return 0;
 }

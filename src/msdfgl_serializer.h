@@ -4,6 +4,8 @@
 
 #include "msdfgl.h"
 
+#define SERIALIZER_SCALE 64.0
+
 int msdfgl_glyph_buffer_size(FT_Face face, int code, size_t *meta_size,
                              size_t *point_size);
 

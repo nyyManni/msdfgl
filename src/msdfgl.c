@@ -375,8 +375,8 @@ msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, doub
     f->_direct_lookup_upper_limit = 0;
     f->atlas_padding = 2;
 
-    float ascender = f->face->ascender / 64.0;
-    float descender = f->face->descender / 64.0;
+    float ascender = f->face->ascender / SERIALIZER_SCALE;
+    float descender = f->face->descender / SERIALIZER_SCALE;
     f->vertical_advance = (ascender - descender);
 
     msdfgl_map_create(&f->character_index, 256);
@@ -452,10 +452,10 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
 
         map_elem_t *m = msdfgl_map_insert(&font->character_index, start + i);
         m->index = font->_nglyphs + i;
-        m->horizontal_advance = advance;
+        m->horizontal_advance = advance / SERIALIZER_SCALE;
 
-        buffer_width = (glyph_width + font->range) * font->scale;
-        buffer_height = (glyph_height + font->range) * font->scale;
+        buffer_width = ((glyph_width / SERIALIZER_SCALE) + font->range) * font->scale;
+        buffer_height = ((glyph_height / SERIALIZER_SCALE) + font->range) * font->scale;
 
         meta_ptr += meta_sizes[i];
         point_ptr += point_sizes[i];
@@ -472,10 +472,10 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
         atlas_index[i].offset_y = font->_offset_y;
         atlas_index[i].size_x = buffer_width;
         atlas_index[i].size_y = buffer_height;
-        atlas_index[i].bearing_x = bearing_x;
-        atlas_index[i].bearing_y = bearing_y;
-        atlas_index[i].glyph_width = glyph_width;
-        atlas_index[i].glyph_height = glyph_height;
+        atlas_index[i].bearing_x = bearing_x / 1.0;
+        atlas_index[i].bearing_y = bearing_y / 1.0;
+        atlas_index[i].glyph_width = glyph_width / 1.0;
+        atlas_index[i].glyph_height = glyph_height / 1.0;
 
         font->_offset_x += buffer_width + font->atlas_padding;
 
@@ -650,8 +650,8 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
         GLfloat bounding_box[] = {0, 0, w, 0, 0, h, 0, h, w, 0, w, h};
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(bounding_box), bounding_box);
 
-        glUniform2f(ctx->_translate_uniform, -g.bearing_x + font->range / 2.0,
-                    g.glyph_height - g.bearing_y + font->range / 2.0);
+        glUniform2f(ctx->_translate_uniform, -g.bearing_x / SERIALIZER_SCALE + font->range / 2.0,
+                    (g.glyph_height - g.bearing_y) / SERIALIZER_SCALE + font->range / 2.0);
 
         glUniform2f(ctx->_texture_offset_uniform, g.offset_x, g.offset_y);
         glUniform1i(ctx->_meta_offset_uniform, meta_offset);
