@@ -21,7 +21,7 @@ Both the atlas and index textures grow as more glyphs are rendered. The user can
 
 ![Implementation](img/diagram.png)
 
-## Installation (Linux only for now):
+## Installation (Linux and macOS only for now):
 
 The lib will be installed in `/usr/local/lib`, and the header into `/usr/local/include`.
 ```sh

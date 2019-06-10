@@ -2,9 +2,7 @@
 #ifndef MSDF_SERIALIZER_H
 #define MSDF_SERIALIZER_H
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include <GL/gl.h>
+#include "msdfgl.h"
 
 int msdfgl_glyph_buffer_size(FT_Face face, int code, size_t *meta_size,
                              size_t *point_size);

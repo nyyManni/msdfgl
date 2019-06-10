@@ -27,10 +27,11 @@ shift
 echo '#ifndef _MSDF_SHADERS_H\\n#define _MSDF_SHADERS_H' >$OUTPUT
 for header; do
         fname=\${header##*/};
-        sed -e '1 i\\\\nconst char * _'\${fname\%\%.glsl}' =' \\
-            -e 's/\\\\/\\\\\\\\/' \\
+        echo '\\nconst char * _'\${fname\%\%.glsl}' =' >>\$OUTPUT
+        sed -e 's/\\\\/\\\\\\\\/' \\
             -e 's/^\\(.*\\)\$/\"\\1\\\\n\"/' \\
-            -e '\$ a;' \$header >>\$OUTPUT; \\
+            \$header >>\$OUTPUT; \\
+        echo ';' >>\$OUTPUT
 done
 echo '#endif /* _MSDF_SHADERS_H */' >>\$OUTPUT"
   )
@@ -44,6 +45,10 @@ add_custom_command(
 )
 
 add_library(msdfgl SHARED src/msdfgl.c src/msdfgl_serializer.c ${SHADER_HEADER})
+if (APPLE)
+  set_target_properties(msdfgl PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+  add_definitions(-DGL_SILENCE_DEPRECATION)
+endif (APPLE)
 
 target_include_directories (msdfgl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
