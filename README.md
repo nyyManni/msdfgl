@@ -1,4 +1,4 @@
-# MSDFGL - OpenGL implementation of the multi-channel distance-field algorithm.
+# MSDFGL - OpenGL implementation of the multi-channel signed distance-field algorithm.
 
 The MSDF algorithm implemented in this library was created by Viktor Chlumský (https://github.com/Chlumsky/msdfgen). The full credit of the algorithm goes to him, although none of the original code can be found from this repository.
 
