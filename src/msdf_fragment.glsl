@@ -16,8 +16,8 @@ precision mediump float;
 
 precision mediump samplerBuffer;
 precision mediump usamplerBuffer;
-layout (binding = 0) uniform usamplerBuffer metadata;
-layout (binding = 1) uniform samplerBuffer point_data;
+uniform usamplerBuffer metadata;
+uniform samplerBuffer point_data;
 
 #define meta_at(i) texelFetch(metadata, int(i)).r
 #define point_at(i) vec2(texelFetch(point_data, 2 * int(i)).r, \

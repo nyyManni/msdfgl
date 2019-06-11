@@ -70,7 +70,7 @@ The library includes two shaders:
 
 ## TODO:
 - There are strange artifacs all over the bitmaps, need to figure out where do they come from.
-- Cross-platform compilation, cross-OpenGL shaders.
+- Cross-platform compilation
 - Edge-coloring for teardrop with 1 or 2 segments
 - Support for cubic segments
 - Kerning

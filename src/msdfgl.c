@@ -230,15 +230,19 @@ void _msdfgl_ortho(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top,
     dest[3][3] = 1.0f;
 }
 
-int compile_shader(const char *source, GLenum type, GLuint *shader) {
+int compile_shader(const char *source, GLenum type, GLuint *shader, const char *version) {
+
+    /* Default to versio */
+    if (!version) version = "330 core";
+
     *shader = glCreateShader(type);
     if (!*shader) {
         fprintf(stderr, "failed to create shader\n");
     }
 
-    const char *src[] = {"#version 320 es\n", source};
+    const char *src[] = {"#version ", version, "\n", source};
 
-    glShaderSource(*shader, 2, src, NULL);
+    glShaderSource(*shader, 4, src, NULL);
     glCompileShader(*shader);
 
     GLint status;
@@ -254,7 +258,7 @@ int compile_shader(const char *source, GLenum type, GLuint *shader) {
     return 1;
 }
 
-msdfgl_context_t msdfgl_create_context() {
+msdfgl_context_t msdfgl_create_context(const char *version) {
     msdfgl_context_t ctx = (msdfgl_context_t)malloc(sizeof(struct _msdfgl_context));
 
     if (!ctx)
@@ -269,9 +273,9 @@ msdfgl_context_t msdfgl_create_context() {
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &ctx->_max_texture_size);
 
     GLuint vertex_shader, geometry_shader, fragment_shader;
-    if (!compile_shader(_msdf_vertex, GL_VERTEX_SHADER, &vertex_shader))
+    if (!compile_shader(_msdf_vertex, GL_VERTEX_SHADER, &vertex_shader, version))
         return NULL;
-    if (!compile_shader(_msdf_fragment, GL_FRAGMENT_SHADER, &fragment_shader))
+    if (!compile_shader(_msdf_fragment, GL_FRAGMENT_SHADER, &fragment_shader, version))
         return NULL;
 
     ctx->gen_shader = glCreateProgram();
@@ -310,11 +314,11 @@ msdfgl_context_t msdfgl_create_context() {
         return NULL;
     }
 
-    if (!compile_shader(_font_vertex, GL_VERTEX_SHADER, &vertex_shader))
+    if (!compile_shader(_font_vertex, GL_VERTEX_SHADER, &vertex_shader, version))
         return NULL;
-    if (!compile_shader(_font_geometry, GL_GEOMETRY_SHADER, &geometry_shader))
+    if (!compile_shader(_font_geometry, GL_GEOMETRY_SHADER, &geometry_shader, version))
         return NULL;
-    if (!compile_shader(_font_fragment, GL_FRAGMENT_SHADER, &fragment_shader))
+    if (!compile_shader(_font_fragment, GL_FRAGMENT_SHADER, &fragment_shader, version))
         return NULL;
 
     if (!(ctx->render_shader = glCreateProgram()))

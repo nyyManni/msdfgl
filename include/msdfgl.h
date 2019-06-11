@@ -38,9 +38,13 @@ typedef struct _msdfgl_context *msdfgl_context_t;
 /**
  * Compile shaders and configure uniforms.
  *
+ * version-parameter defines with which GLSL version the shaders will be
+ * compiled. Supported versions are "330", "330 core" and "320 es".
+ * giving NULL uses the default ("330 core").
+ *
  * Returns a new MSDF GL context, or NULL if creating the context failed.
  */
-msdfgl_context_t msdfgl_create_context();
+msdfgl_context_t msdfgl_create_context(const char *version);
 
 /**
  * Release resources allocated by `msdfgl_crate_context`.
@@ -160,7 +164,6 @@ float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t c
  * The default DPI is (72, 72).
  */
 void msdfgl_set_dpi(msdfgl_context_t context, float horizontal, float vertical);
-
 
 /* Plumbing commands. In case you want to build your own renderer. */
 /**
