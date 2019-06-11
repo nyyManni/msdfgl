@@ -614,12 +614,6 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     glUniform1i(ctx->metadata_uniform, 0);
     glUniform1i(ctx->point_data_uniform, 1);
 
-    GLuint vbo;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-
     glUniformMatrix4fv(ctx->_atlas_projection_uniform, 1, GL_FALSE,
                        (GLfloat *)framebuffer_projection);
 
@@ -637,6 +631,9 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_BUFFER, font->_point_input_texture);
 
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
     GLuint _vbo;
     glGenBuffers(1, &_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, _vbo);
