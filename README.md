@@ -84,3 +84,4 @@ The library includes two shaders:
 - Edge-coloring for teardrop with 1 or 2 segments
 - Support for cubic segments
 - Kerning
+- Unit testing
