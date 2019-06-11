@@ -56,5 +56,11 @@ target_include_directories (msdfgl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(msdfgl ${FREETYPE_LIBRARIES})
 
+find_package(glfw3)
+include_directories(example/glad/include)
+add_executable(msdfgldemo EXCLUDE_FROM_ALL example/demo.c example/glad/src/glad.c)
+target_link_libraries(msdfgldemo msdfgl ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} glfw dl)
+
+
 install(TARGETS msdfgl DESTINATION lib)
 install(FILES include/msdfgl.h DESTINATION include)

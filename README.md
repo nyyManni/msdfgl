@@ -37,7 +37,18 @@ sudo make install
 ```
 
 ## Usage:
-- requires an active OpenGL context - msdfgl will not create it
+
+An example is provided in `example`-directory. It can be compiled (requires glfw):
+```sh
+# In the cmake build directory
+make msdfgldemo
+```
+...and run:
+```sh
+./msdfgldemo
+```
+
+### Usage example:
 ```C
 #include <msdfgl.h>
 
