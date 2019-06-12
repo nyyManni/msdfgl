@@ -1,9 +1,19 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 
 #include <stdio.h>
 
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+
+#include <glad/glad.h>
+#define GLFW_INCLUDE_GLCOREARB
+#include <GLFW/glfw3.h>
+#else
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#endif
+
 #include <msdfgl.h>
+
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -30,7 +40,12 @@ const char *fragmentShaderSource = "#version 330 core\n"
                                    "color = texture(tex, text_pos);\n"
                                    "}\n";
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (!argv[1]) {
+        fprintf(stderr, "Usage msdfgldemo <font file>\n");
+        return -1;
+    }
+
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -102,8 +117,7 @@ int main() {
         return -1;
     }
 
-    const char *font_name = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf";
-    msdfgl_font_t font = msdfgl_load_font(ctx, font_name, 4.0, 2.0, 512);
+    msdfgl_font_t font = msdfgl_load_font(ctx, argv[1], 4.0, 2.0, 512);
     if (!font) {
         fprintf(stderr, "Failed to load font!\n");
         return -1;
