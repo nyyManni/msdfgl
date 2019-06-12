@@ -369,7 +369,10 @@ msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, doub
     if (!f)
         return NULL;
 
-    FT_New_Face(ctx->ft_library, font_name, 0, &f->face);
+    if (FT_New_Face(ctx->ft_library, font_name, 0, &f->face)) {
+        free(f);
+        return NULL;
+    }
 
     f->scale = scale;
     f->range = range;
