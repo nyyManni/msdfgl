@@ -161,6 +161,15 @@ map_elem_t *msdfgl_map_get(msdfgl_map_t *map, int key) {
     return r ? *r : NULL;
 }
 
+void msdfgl_map_destroy(msdfgl_map_t *map) {
+    msdfgl_elem_list_t *l = map->elems;
+    while (l->next) {
+        msdfgl_elem_list_t *tmp = l->next;
+        free(l);
+        l = tmp;
+    }
+}
+
 typedef struct msdfgl_index_entry {
     GLfloat offset_x;
     GLfloat offset_y;
@@ -204,6 +213,9 @@ struct _msdfgl_context {
     GLint _units_per_em_uniform;
 
     GLint _max_texture_size;
+
+    GLuint bbox_vao;
+    GLuint bbox_vbo;
 };
 
 GLfloat _MAT4_ZERO_INIT[4][4] = {{0.0f, 0.0f, 0.0f, 0.0f},
@@ -359,7 +371,30 @@ msdfgl_context_t msdfgl_create_context(const char *version) {
         return NULL;
     }
 
+    glGenVertexArrays(1, &ctx->bbox_vao);
+    glGenBuffers(1, &ctx->bbox_vbo);
+
+    glBindBuffer(GL_ARRAY_BUFFER, ctx->bbox_vbo);
+    glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(GLfloat), 0, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
     return ctx;
+}
+
+void msdfgl_destroy_context(msdfgl_context_t ctx) {
+
+    if (!ctx)
+        return;
+
+    FT_Done_FreeType(ctx->ft_library);
+
+    glDeleteProgram(ctx->gen_shader);
+    glDeleteProgram(ctx->render_shader);
+
+    glDeleteVertexArrays(1, &ctx->bbox_vao);
+    glDeleteBuffers(1, &ctx->bbox_vbo);
+
+    free(ctx);
 }
 
 msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, double range,
@@ -406,6 +441,27 @@ msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, doub
 
     return f;
 }
+
+void msdfgl_destroy_font(msdfgl_font_t font) {
+
+    FT_Done_Face(font->face);
+
+    glDeleteBuffers(1, &font->_meta_input_buffer);
+    glDeleteBuffers(1, &font->_point_input_buffer);
+    glDeleteTextures(1, &font->_meta_input_texture);
+    glDeleteTextures(1, &font->_point_input_texture);
+
+    glDeleteBuffers(1, &font->_index_buffer);
+    glDeleteTextures(1, &font->index_texture);
+
+    glDeleteTextures(1, &font->atlas_texture);
+    glDeleteFramebuffers(1, &font->_atlas_framebuffer);
+
+    msdfgl_map_destroy(&font->character_index);
+
+    free(font);
+}
+
 
 int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     msdfgl_context_t ctx = font->context;
@@ -638,14 +694,8 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_BUFFER, font->_point_input_texture);
 
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-    GLuint _vbo;
-    glGenBuffers(1, &_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-
-    glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(GLfloat), 0, GL_DYNAMIC_DRAW);
+    glBindVertexArray(ctx->bbox_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, ctx->bbox_vbo);
 
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), 0);
     glEnableVertexAttribArray(0);
@@ -709,37 +759,6 @@ error:
 
 int msdfgl_generate_glyph(msdfgl_font_t font, int32_t character) {
     return msdfgl_generate_glyphs(font, character, character);
-}
-
-void msdfgl_destroy_context(msdfgl_context_t ctx) {
-
-    if (!ctx)
-        return;
-
-    FT_Done_FreeType(ctx->ft_library);
-
-    glDeleteProgram(ctx->gen_shader);
-    glDeleteProgram(ctx->render_shader);
-
-    free(ctx);
-}
-
-void msdfgl_destroy_font(msdfgl_font_t font) {
-
-    FT_Done_Face(font->face);
-
-    glDeleteBuffers(1, &font->_meta_input_buffer);
-    glDeleteBuffers(1, &font->_point_input_buffer);
-    glDeleteTextures(1, &font->_meta_input_texture);
-    glDeleteTextures(1, &font->_point_input_texture);
-
-    glDeleteBuffers(1, &font->_index_buffer);
-    glDeleteTextures(1, &font->index_texture);
-
-    glDeleteTextures(1, &font->atlas_texture);
-    glDeleteFramebuffers(1, &font->_atlas_framebuffer);
-
-    free(font);
 }
 
 void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
@@ -833,6 +852,8 @@ void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+    glDeleteBuffers(1, &glyph_buffer);
+    glDeleteVertexArrays(1, &vao);
 }
 
 float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t color,
