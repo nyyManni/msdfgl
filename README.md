@@ -10,7 +10,7 @@ The code had to go through quite a bit of modifications to make it runnable on t
 3. It does not use pointers (not supported in GLSL either)
 4. Dropped support for cubic segments (for simplicity's sake, this will probably be added later)
 
-For now tested only with OpenGL ES 3.2 on Wayland EGL, and OpenGL 3.3 Core with glfw3, on Linux with Wayland, with Intel UHD Graphics 620.
+For now tested only with OpenGL ES 3.2 on Wayland EGL, and OpenGL 3.3 Core with glfw3, on Linux with Wayland, with Intel UHD Graphics 620, and macOS Mojave on Macbook Pro 2015 (Iris Pro).
 
 ## Implementation
 The highly parallelizable part of MSDF algorithm has been moved to run on the GPU (the part of msdfgen which is executed per each pixel of the bitmap).
