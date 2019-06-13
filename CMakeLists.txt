@@ -19,8 +19,35 @@ set(SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/font_fragment.glsl
 set(SHADER_HEADER ${CMAKE_CURRENT_BINARY_DIR}/_msdfgl_shaders.h)
 
 message("-- Generating header generator")
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/gen-shaders
-"
+if (WIN32)
+
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/gen-shaders.bat
+    "
+@echo off
+
+set OUTPUT=\%1
+
+SETLOCAL ENABLEDELAYEDEXPANSION
+rem echo \%OUTPUT\%
+echo #ifndef _MSDFGL_SHADERS_H > \%OUTPUT\%
+echo #define _MSDFGL_SHADERS_H >> \%OUTPUT\%
+
+for \%\%f in (\%2 \%3 \%4 \%5 \%6) do (
+	set fname=\%\%f
+	set fname=!!fname:src\\=!!
+    echo const char * _!!fname:.glsl= !! = >> \%OUTPUT\%
+	for /f \"tokens=*\" \%\%l in (\%\%f) do (
+	    set line=\%\%l
+	    echo \"!!line:\\=\\\\!!\" >> \%OUTPUT\%
+	)
+	echo ; >> \%OUTPUT\%
+)
+echo #endif /* _MSDFGL_SHADERS_H */ >> \%OUTPUT\%")
+
+else ()  # Linux and macOS
+
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/tmp/gen-shaders
+    "
 OUTPUT=\$1
 shift
 
@@ -33,16 +60,20 @@ for header; do
             \$header >>\$OUTPUT; \\
         echo ';' >>\$OUTPUT
 done
-echo '#endif /* _MSDF_SHADERS_H */' >>\$OUTPUT"
-  )
+echo '#endif /* _MSDF_SHADERS_H */' >>\$OUTPUT")
+  file(
+    COPY ${CMAKE_CURRENT_BINARY_DIR}/tmp/gen-shaders
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
+endif (WIN32)
 
 add_custom_command(
-    PRE_BUILD
-    OUTPUT ${SHADER_HEADER}
-    COMMENT "Generating shader header"
-    COMMAND sh ${CMAKE_CURRENT_BINARY_DIR}/gen-shaders ${SHADER_HEADER} ${SHADERS}
-    DEPENDS ${SHADERS}
-)
+  PRE_BUILD
+  OUTPUT ${SHADER_HEADER}
+  COMMENT "Generating shader header"
+  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/gen-shaders ${SHADER_HEADER} ${SHADERS}
+  DEPENDS ${SHADERS})
 
 add_library(msdfgl SHARED src/msdfgl.c src/msdfgl_serializer.c ${SHADER_HEADER})
 if (APPLE)
