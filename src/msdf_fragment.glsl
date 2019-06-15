@@ -87,7 +87,7 @@ bool less(vec2 a, vec2 b) {
 
 void main() {
     vec2 coords = gl_FragCoord.xy - offset;
-    
+
     vec2 p = ((coords + 0.49) / scale) - vec2(translate.x, -translate.y);
     p.y  = (glyph_height / scale.y) - p.y;
 
@@ -108,7 +108,7 @@ void main() {
     }
     int point_index = point_offset;
     int meta_index = meta_offset;
-    
+
 
     uint ncontours = meta_at(meta_index++);
     for (uint _i = 0u; _i < ncontours; ++_i) {
@@ -162,7 +162,7 @@ void main() {
     vec3 d = get_pixel_distance(p);
 
     color = vec4(d / range + 0.5, 1.0);
-    
+
     // For testing
     // color = median(color.rgb) > 0.5 ? vec4(1.0, 1.0, 1.0, 1.0) : vec4(0.0, 0.0, 0.0, 1.0);
 }
