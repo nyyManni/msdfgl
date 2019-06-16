@@ -1,6 +1,5 @@
 #include <math.h>
 #include <stdbool.h>
-#include <unistd.h>
 
 #include "msdfgl.h"
 #include "msdfgl_serializer.h"

@@ -1,6 +1,11 @@
 #include <locale.h>
 #include <wchar.h>
 
+#if defined(_MSC_VER)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
