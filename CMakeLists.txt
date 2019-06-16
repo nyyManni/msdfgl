@@ -2,7 +2,11 @@
 cmake_minimum_required (VERSION 3.9)
 project (msdfgl VERSION 0.1 DESCRIPTION "OpenGL MSFD Generator and renderer")
 
-find_package(Freetype REQUIRED)
+if (WIN32)
+  set(ENV{FREETYPE_DIR} "C:/Program Files/freetype")
+endif (WIN32)
+
+find_package(Freetype)
 include_directories(${FREETYPE_INCLUDE_DIRS})
 
 set(OpenGL_GL_PREFERENCE LEGACY)
@@ -18,6 +22,8 @@ set(SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/font_fragment.glsl
             ${CMAKE_CURRENT_SOURCE_DIR}/src/msdf_vertex.glsl)
 set(SHADER_HEADER ${CMAKE_CURRENT_BINARY_DIR}/_msdfgl_shaders.h)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 message("-- Generating header generator")
 if (WIN32)
 
@@ -28,14 +34,16 @@ if (WIN32)
 set OUTPUT=\%1
 
 SETLOCAL ENABLEDELAYEDEXPANSION
-rem echo \%OUTPUT\%
+
 echo #ifndef _MSDFGL_SHADERS_H > \%OUTPUT\%
 echo #define _MSDFGL_SHADERS_H >> \%OUTPUT\%
 
+
 for \%\%f in (\%2 \%3 \%4 \%5 \%6) do (
 	set fname=\%\%f
-	set fname=!!fname:src\\=!!
-    echo const char * _!!fname:.glsl= !! = >> \%OUTPUT\%
+	set fname=!!fname:/=\\!!
+	for \%\%b in (!!fname!!) do (set fname=\%\%~nb)
+	echo const char * _!!fname!! = >> \%OUTPUT\%
 	for /f \"tokens=*\" \%\%l in (\%\%f) do (
 	    set line=\%\%l
 	    echo \"!!line:\\=\\\\!!\" >> \%OUTPUT\%

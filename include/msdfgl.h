@@ -23,6 +23,11 @@
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H
 
+#ifdef _WIN32
+#include <windows.h>
+#include <stdint.h>
+#endif
+
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #else
