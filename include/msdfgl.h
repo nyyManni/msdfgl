@@ -107,8 +107,8 @@ typedef struct _msdfgl_glyph {
 /**
  * Load font from a font file and generate textures and buffers for it.
  */
-msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, double range,
-                               double scale, int texture_size);
+msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, float range,
+                               float scale, int texture_size);
 
 /**
  * Get vertical advance of the font with the given size.

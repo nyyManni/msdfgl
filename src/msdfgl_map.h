@@ -18,7 +18,7 @@
 typedef struct _msdfgl_map_item {
     FT_ULong code;
     int index;
-    double advance[2];
+    float advance[2];
 } msdfgl_map_item_t;
 
 typedef struct _msdfgl_map {

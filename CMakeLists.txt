@@ -91,6 +91,12 @@ if (APPLE)
   add_definitions(-DGL_SILENCE_DEPRECATION)
 endif (APPLE)
 
+if(MSVC)
+  target_compile_options(msdfgl PRIVATE /W4 /WX)
+else()
+  target_compile_options(msdfgl PRIVATE -Wall -Wextra -pedantic -Werror -Wno-overlength-strings -Wno-unused-parameter)
+endif()
+
 target_include_directories (msdfgl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(msdfgl ${FREETYPE_LIBRARIES})

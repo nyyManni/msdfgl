@@ -217,7 +217,7 @@ int msdfgl_serialize_glyph(FT_Face face, int code, char *meta_buffer,
         int winding_index = meta_index++;
         int nsegments = meta_buffer[meta_index++];
 
-        double total = 0;
+        float total = 0;
         if (nsegments == 1) {
             int npoints = meta_buffer[meta_index + 1];
             vec2 a = segment_point(point_ptr, npoints, 0);

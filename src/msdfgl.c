@@ -27,11 +27,11 @@ typedef SSIZE_T ssize_t;
 struct _msdfgl_font {
     char *font_name;
 
-    double scale;
-    double range;
+    float scale;
+    float range;
     int texture_width;
 
-    double vertical_advance;
+    float vertical_advance;
 
     msdfgl_map_t character_index;
 
@@ -325,8 +325,8 @@ void msdfgl_destroy_context(msdfgl_context_t ctx) {
     free(ctx);
 }
 
-msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, double range,
-                               double scale, int texture_size) {
+msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, float range,
+                               float scale, int texture_size) {
 
     msdfgl_font_t f = (msdfgl_font_t)malloc(sizeof(struct _msdfgl_font) * 2);
     if (!f)
@@ -423,7 +423,7 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
         goto error;
 
     size_t meta_size_sum = 0, point_size_sum = 0;
-    for (size_t i = 0; i <= end - start; ++i) {
+    for (size_t i = 0; (int)i <= (int)end - start; ++i) {
         msdfgl_glyph_buffer_size(font->face, start + i, &meta_sizes[i], &point_sizes[i]);
 
         meta_size_sum += meta_sizes[i];
@@ -439,7 +439,7 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     /* Serialize the glyphs into RAM. */
     char *meta_ptr = metadata;
     char *point_ptr = point_data;
-    for (size_t i = 0; i <= end - start; ++i) {
+    for (size_t i = 0; (int)i <= (int)end - start; ++i) {
         float buffer_width, buffer_height;
         msdfgl_serialize_glyph(font->face, start + i, meta_ptr, (GLfloat *)point_ptr);
 
@@ -482,7 +482,7 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
         if (new_texture_height > font->context->_max_texture_size) {
             goto error;
         }
-        while ((font->_nglyphs + i + 1) > new_index_size) {
+        while (((int)(font->_nglyphs + i) + 1) > new_index_size) {
             new_index_size *= 2;
         }
     }
@@ -498,7 +498,7 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     glBindBuffer(GL_ARRAY_BUFFER, font->_point_input_buffer);
     glBufferData(GL_ARRAY_BUFFER, point_size_sum, point_data, GL_STATIC_READ);
 
-    if (font->_nallocated == new_index_size) {
+    if ((int)font->_nallocated == new_index_size) {
         glBindBuffer(GL_ARRAY_BUFFER, font->_index_buffer);
     } else {
         GLuint new_buffer;
