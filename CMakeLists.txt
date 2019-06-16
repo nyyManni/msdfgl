@@ -75,7 +75,7 @@ add_custom_command(
   COMMAND ${CMAKE_CURRENT_BINARY_DIR}/gen-shaders ${SHADER_HEADER} ${SHADERS}
   DEPENDS ${SHADERS})
 
-add_library(msdfgl SHARED src/msdfgl.c src/msdfgl_serializer.c ${SHADER_HEADER})
+add_library(msdfgl SHARED src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c ${SHADER_HEADER})
 if (APPLE)
 
   # We make it the library user's responsibility to link against some OpenGL.

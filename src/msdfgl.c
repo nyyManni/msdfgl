@@ -1,5 +1,4 @@
 #include <locale.h>
-#include <search.h>
 #include <wchar.h>
 
 #include <ft2build.h>
@@ -15,30 +14,10 @@
 
 #include "msdfgl.h"
 #include "msdfgl_serializer.h"
+#include "msdfgl_map.h"
 
 #include "_msdfgl_shaders.h" /* Auto-generated */
 
-struct msdfgl_map_t;
-
-typedef struct _map_elem {
-    int key;
-    int index;
-    double horizontal_advance;
-} map_elem_t;
-
-typedef struct _msdfgl_elem_list {
-    struct _msdfgl_elem_list *next;
-    map_elem_t data[];
-} msdfgl_elem_list_t;
-
-typedef struct _msdfgl_map {
-    void *root;
-    size_t chunk_size;
-
-    size_t i;
-    msdfgl_elem_list_t *cur_list;
-    msdfgl_elem_list_t *elems;
-} msdfgl_map_t;
 
 struct _msdfgl_font {
     char *font_name;
@@ -113,62 +92,6 @@ struct _msdfgl_font {
 
     int _direct_lookup_upper_limit;
 };
-
-int comparator(const void *a, const void *b) {
-    return ((map_elem_t *)a)->key - ((map_elem_t *)b)->key;
-}
-
-int msdfgl_map_create(msdfgl_map_t *map, size_t chunk) {
-    map->root = 0;
-    map->i = 0;
-    map->chunk_size = chunk;
-
-    map->elems = (msdfgl_elem_list_t *)malloc(sizeof(msdfgl_elem_list_t) +
-                                              map->chunk_size * sizeof(map_elem_t));
-    if (!map->elems)
-        return -1;
-    map->elems->next = NULL;
-    map->cur_list = map->elems;
-    return 0;
-}
-
-map_elem_t *msdfgl_map_insert(msdfgl_map_t *map, int key) {
-    if (map->i == map->chunk_size) {
-        /* Allocate a new list */
-        msdfgl_elem_list_t *l = (msdfgl_elem_list_t *)malloc(
-            sizeof(msdfgl_elem_list_t) + map->chunk_size * sizeof(map_elem_t));
-        if (!l)
-            return NULL;
-        l->next = NULL;
-        map->cur_list->next = l;
-        map->cur_list = l;
-        map->i = 0;
-    }
-
-    map->cur_list->data[map->i].key = key;
-    if (!tsearch((void *)&map->cur_list->data[map->i], &map->root, comparator))
-        return NULL;
-
-    map_elem_t *p = &map->cur_list->data[map->i];
-    map->i++;
-    return p;
-}
-
-map_elem_t *msdfgl_map_get(msdfgl_map_t *map, int key) {
-    map_elem_t e;
-    e.key = key;
-    map_elem_t **r = (map_elem_t **)tfind((void *)&e, &map->root, comparator);
-    return r ? *r : NULL;
-}
-
-void msdfgl_map_destroy(msdfgl_map_t *map) {
-    msdfgl_elem_list_t *l = map->elems;
-    while (l->next) {
-        msdfgl_elem_list_t *tmp = l->next;
-        free(l);
-        l = tmp;
-    }
-}
 
 typedef struct msdfgl_index_entry {
     GLfloat offset_x;
@@ -426,7 +349,7 @@ msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, doub
 
     f->vertical_advance = (f->face->ascender - f->face->descender);
 
-    msdfgl_map_create(&f->character_index, 256);
+    msdfgl_map_init(&f->character_index);
 
     glGenBuffers(1, &f->_meta_input_buffer);
     glGenBuffers(1, &f->_point_input_buffer);
@@ -515,9 +438,10 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
         float buffer_width, buffer_height;
         msdfgl_serialize_glyph(font->face, start + i, meta_ptr, (GLfloat *)point_ptr);
 
-        map_elem_t *m = msdfgl_map_insert(&font->character_index, start + i);
+        msdfgl_map_item_t *m = msdfgl_map_insert(&font->character_index, start + i);
         m->index = font->_nglyphs + i;
-        m->horizontal_advance = font->face->glyph->metrics.horiAdvance;
+        m->advance[0] = font->face->glyph->metrics.horiAdvance;
+        m->advance[1] = font->face->glyph->metrics.vertAdvance;
 
         buffer_width = font->face->glyph->metrics.width / SERIALIZER_SCALE + font->range;
         buffer_height =
@@ -768,7 +692,7 @@ void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
         /* If glyphs 0 - N were generated first, we can optimize by having their
            indices be equal to their keys. */
         if (glyphs[i].key >= font->_direct_lookup_upper_limit) {
-            map_elem_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
+            msdfgl_map_item_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
             glyphs[i].key = e ? e->index : 0;
         }
     }
@@ -886,11 +810,11 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
         glyphs[i].skew = 0;
         glyphs[i].strength = 0.5;
 
-        map_elem_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
+        msdfgl_map_item_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
         if (!e)
             continue;
 
-        x += e->horizontal_advance * (size * font->context->dpi[0] / 72.0) /
+        x += e->advance[0] * (size * font->context->dpi[0] / 72.0) /
              font->face->units_per_EM;
     }
     msdfgl_render(font, glyphs, bufsize, projection);
@@ -933,11 +857,11 @@ float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t c
         glyphs[i].skew = 0;
         glyphs[i].strength = 0.5;
 
-        map_elem_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
+        msdfgl_map_item_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
         if (!e)
             continue;
 
-        x += e->horizontal_advance * (size * font->context->dpi[0] / 72.0) /
+        x += e->advance[0] * (size * font->context->dpi[0] / 72.0) /
              font->face->units_per_EM;
     }
     msdfgl_render(font, glyphs, bufsize, projection);

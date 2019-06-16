@@ -1,6 +1,6 @@
 
-#ifndef MSDF_SERIALIZER_H
-#define MSDF_SERIALIZER_H
+#ifndef MSDFGL_SERIALIZER_H
+#define MSDFGL_SERIALIZER_H
 
 #include "msdfgl.h"
 
@@ -12,4 +12,4 @@ int msdfgl_glyph_buffer_size(FT_Face face, int code, size_t *meta_size,
 int msdfgl_serialize_glyph(FT_Face face, int code, char *meta_buffer,
                            GLfloat *point_buffer);
 
-#endif
+#endif  /* MSDFGL_SERIALIZER_H */
