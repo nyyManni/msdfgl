@@ -82,7 +82,6 @@ The library includes two shaders:
 - Cross-platform compilation
 - Edge-coloring for teardrop with 1 or 2 segments
 - Support for cubic segments (doesn't seem to be too common in .ttf fonts)
-- Kerning
 - Unit testing
 - Letter 'l' in Liberation fails to render.
 - Maybe render several fonts to same buffer if there is space?

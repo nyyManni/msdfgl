@@ -818,8 +818,13 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
         msdfgl_map_item_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
         if (!e)
             continue;
+        FT_Vector kerning = {0, 0};
+        if (i < bufsize - 1 && FT_HAS_KERNING(font->face))
+            FT_Get_Kerning(font->face, FT_Get_Char_Index(font->face, glyphs[i].key),
+                           FT_Get_Char_Index(font->face, glyphs[i + 1].key),
+                           FT_KERNING_UNSCALED, &kerning);
 
-        x += e->advance[0] * (size * font->context->dpi[0] / 72.0) /
+        x += (e->advance[0] + kerning.x) * (size * font->context->dpi[0] / 72.0) /
              font->face->units_per_EM;
     }
     msdfgl_render(font, glyphs, bufsize, projection);
@@ -866,7 +871,13 @@ float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t c
         if (!e)
             continue;
 
-        x += e->advance[0] * (size * font->context->dpi[0] / 72.0) /
+        FT_Vector kerning = {0, 0};
+        if (i < bufsize - 1 && FT_HAS_KERNING(font->face))
+            FT_Get_Kerning(font->face, FT_Get_Char_Index(font->face, glyphs[i].key),
+                           FT_Get_Char_Index(font->face, glyphs[i + 1].key),
+                           FT_KERNING_UNSCALED, &kerning);
+
+        x += (e->advance[0] + kerning.x) * (size * font->context->dpi[0] / 72.0) /
              font->face->units_per_EM;
     }
     msdfgl_render(font, glyphs, bufsize, projection);
