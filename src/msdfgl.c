@@ -754,7 +754,7 @@ void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
                        (GLfloat *)font->atlas_projection);
 
     glUniformMatrix4fv(font->context->window_projection_uniform, 1, GL_FALSE, projection);
-    glUniform1f(font->context->_padding_uniform, (GLfloat)(font->range / 2.0));
+    glUniform1f(font->context->_padding_uniform, (GLfloat)(font->range / 2.0 * SERIALIZER_SCALE));
     glUniform1f(font->context->_units_per_em_uniform, (GLfloat)font->face->units_per_EM);
     glUniform2f(font->context->_dpi_uniform, font->context->dpi[0],
                 font->context->dpi[1]);
