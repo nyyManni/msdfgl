@@ -15,9 +15,11 @@ For now tested only with OpenGL ES 3.2 on Wayland EGL, and OpenGL 3.3 Core with 
 ## Performance
 The following plot shows performance comparisons to msdfgen. The benchmark consists of generating an MSDF texture from ASCII (0 - 127) characters. It was performed with a Core i7 8550m and Intel UHD Graphics 620, on Debian Linux. Each time was calculated by taking an average of a 100 executions, and canceling out the time for glfw to create and destroy the OpenGL context.
 
-There seems to be some caching going on with the Intel driver on Linux, as the shader compilation seems to be instantaneous if the binary had been run before. First I thought that the resulting atlas texture was being cached, but generating the the texture was still fast to a font that msdfgl had never seen before. The caching behavior was not seen on macOS.
+The plot on the right has the exact same data, just with a logarithmic y-axis.
 
 ![Benchmarks](img/benchmarks.png)
+
+There seems to be some caching going on with the Intel driver on Linux, as the shader compilation seems to be instantaneous if the binary had been run before. First I thought that the resulting atlas texture was being cached, but generating the the texture was still fast to a font that msdfgl had never seen before. The caching behavior was not seen on macOS.
 
 With `msdfgen` the measurement did not include the time to transfer the resulted bitmaps to a texture, whereas with `msdfgl` after the execution the font was ready to be rendered with.
 
