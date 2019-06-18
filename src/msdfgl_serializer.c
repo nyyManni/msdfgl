@@ -339,7 +339,7 @@ int msdfgl_serialize_glyph(FT_Face face, int code, char *meta_buffer,
                 }
             } else if (nsegments >= 1) {
                 /* TODO: whoa, split in thirds and stuff */
-                printf("stranger things\n");
+                fprintf(stderr, "Non-supported shape\n");
             }
         } else {
             /* Multiple corners. */
