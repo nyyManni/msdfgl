@@ -63,7 +63,7 @@ make msdfgldemo
 #include <msdfgl.h>
 
 msdfgl_context_t context;
-context = msdfgl_create_context();
+context = msdfgl_create_context(NULL);  /* NULL defaults to "330 core" */
 
 msdfgl_font_t font;
 font = msdfgl_load_font(context, "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
