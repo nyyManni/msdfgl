@@ -50,15 +50,14 @@ sudo make install
 ### Windows
 I tested that the compilation can be done and the example works on Windows with 32-bit MSVC 2019.
 
-`CMakeLists.txt` will require some handcrafting to get includes and linkings to freetype and glfw to work. In the end, the build should work with:
+In `CMakeLists.txt` modify variables `FREETYPE_DIR` and `GLFW3_LIB` to point to an existing freetype2 install and to glfw3 library file. 32-bit and 64-bit freetype 2.10 are included in the repository for convenience.
+
 ```sh
 mkdir build
 cd build
 cmake -G "NMake Makefiles" ..
 nmake
 ```
-
-A statically linked library is created. A dll can also be compiled, but that requires some changes to `CMakeLists.txt`, and some playing around with library files.
 
 ## Usage:
 
