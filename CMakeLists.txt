@@ -3,11 +3,14 @@ cmake_minimum_required (VERSION 3.9)
 project (msdfgl VERSION 0.1 DESCRIPTION "OpenGL MSFD Generator and renderer")
 
 if (WIN32)
-  set(ENV{FREETYPE_DIR} "C:/Program Files/freetype")
+  # Modify these to match your environment
+  set(ENV{FREETYPE_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/lib/freetype/win32")
+  set(GLFW3_LIB "C:/Program Files (x86)/glfw-3.3.bin.WIN32/lib-vc2019/glfw3.lib")
 endif (WIN32)
 
 find_package(Freetype)
 include_directories(${FREETYPE_INCLUDE_DIRS})
+
 
 set(OpenGL_GL_PREFERENCE LEGACY)
 find_package(OpenGL REQUIRED)
@@ -27,6 +30,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 message("-- Generating header generator")
 if (WIN32)
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/example/glad/include)
+
+  file(
+    COPY $ENV{FREETYPE_DIR}/freetype.dll
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
   file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/gen-shaders.bat
     "
@@ -107,11 +114,16 @@ target_include_directories (msdfgl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(msdfgl ${FREETYPE_LIBRARIES})
 
-find_package(glfw3)
-include_directories(example/glad/include)
+if (MSVC)
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw3/include)
+else ()
+  find_package(glfw3)
+endif ()
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/example/glad/include)
 add_executable(msdfgldemo EXCLUDE_FROM_ALL example/demo.c example/glad/src/glad.c)
 if (MSVC)
-  target_link_libraries(msdfgldemo msdfgl ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} freetype.lib glfw3.lib glfw)
+  target_link_libraries(msdfgldemo msdfgl ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} ${GLFW3_LIB})
 else()
   target_link_libraries(msdfgldemo msdfgl ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} glfw dl)
 endif()
