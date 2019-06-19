@@ -354,7 +354,7 @@ msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, floa
     f->_direct_lookup_upper_limit = 0;
     f->atlas_padding = 2;
 
-    f->vertical_advance = (f->face->ascender - f->face->descender);
+    f->vertical_advance = (float)(f->face->ascender - f->face->descender);
 
     msdfgl_map_init(&f->character_index);
 
@@ -447,8 +447,8 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
 
         msdfgl_map_item_t *m = msdfgl_map_insert(&font->character_index, start + i);
         m->index = font->_nglyphs + i;
-        m->advance[0] = font->face->glyph->metrics.horiAdvance;
-        m->advance[1] = font->face->glyph->metrics.vertAdvance;
+        m->advance[0] = (float)font->face->glyph->metrics.horiAdvance;
+        m->advance[1] = (float)font->face->glyph->metrics.vertAdvance;
 
         buffer_width = font->face->glyph->metrics.width / SERIALIZER_SCALE + font->range;
         buffer_height =
@@ -465,18 +465,18 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
             font->_y_increment = 0;
         }
         font->_y_increment =
-            buffer_height > font->_y_increment ? buffer_height : font->_y_increment;
+            (size_t)buffer_height > font->_y_increment ? (size_t)buffer_height : font->_y_increment;
 
-        atlas_index[i].offset_x = font->_offset_x;
-        atlas_index[i].offset_y = font->_offset_y;
+        atlas_index[i].offset_x = (GLfloat)font->_offset_x;
+        atlas_index[i].offset_y = (GLfloat)font->_offset_y;
         atlas_index[i].size_x = buffer_width;
         atlas_index[i].size_y = buffer_height;
-        atlas_index[i].bearing_x = font->face->glyph->metrics.horiBearingX;
-        atlas_index[i].bearing_y = font->face->glyph->metrics.horiBearingY;
-        atlas_index[i].glyph_width = font->face->glyph->metrics.width;
-        atlas_index[i].glyph_height = font->face->glyph->metrics.height;
+        atlas_index[i].bearing_x = (GLfloat)font->face->glyph->metrics.horiBearingX;
+        atlas_index[i].bearing_y = (GLfloat)font->face->glyph->metrics.horiBearingY;
+        atlas_index[i].glyph_width = (GLfloat)font->face->glyph->metrics.width;
+        atlas_index[i].glyph_height = (GLfloat)font->face->glyph->metrics.height;
 
-        font->_offset_x += buffer_width + font->atlas_padding;
+        font->_offset_x += (size_t)buffer_width + font->atlas_padding;
 
         while ((font->_offset_y + buffer_height) > new_texture_height) {
             new_texture_height *= 2;
@@ -599,10 +599,11 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GLfloat framebuffer_projection[4][4];
-    _msdfgl_ortho(0, font->texture_width, 0, font->_texture_height, -1.0, 1.0,
-                  framebuffer_projection);
-    _msdfgl_ortho(-font->texture_width, font->texture_width, -font->_texture_height,
-                  font->_texture_height, -1.0, 1.0, font->atlas_projection);
+    _msdfgl_ortho(0, (GLfloat)font->texture_width, 0, (GLfloat)font->_texture_height,
+                  -1.0, 1.0, framebuffer_projection);
+    _msdfgl_ortho(-(GLfloat)font->texture_width, (GLfloat)font->texture_width,
+                  -(GLfloat)font->_texture_height, (GLfloat)font->_texture_height, -1.0,
+                  1.0, font->atlas_projection);
 
     glUseProgram(ctx->gen_shader);
     glUniform1i(ctx->metadata_uniform, 0);
@@ -641,8 +642,8 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(bounding_box), bounding_box);
 
         glUniform2f(
-            ctx->_translate_uniform, -g.bearing_x / SERIALIZER_SCALE + font->range / 2.0,
-            (g.glyph_height - g.bearing_y) / SERIALIZER_SCALE + font->range / 2.0);
+            ctx->_translate_uniform, -g.bearing_x / SERIALIZER_SCALE + font->range / 2.0f,
+            (g.glyph_height - g.bearing_y) / SERIALIZER_SCALE + font->range / 2.0f);
 
         glUniform2f(ctx->_texture_offset_uniform, g.offset_x, g.offset_y);
         glUniform1i(ctx->_meta_offset_uniform, meta_offset);
@@ -826,7 +827,7 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
                            FT_Get_Char_Index(font->face, glyphs[i + 1].key),
                            FT_KERNING_UNSCALED, &kerning);
 
-        x += (e->advance[0] + kerning.x) * (size * font->context->dpi[0] / 72.0) /
+        x += (e->advance[0] + kerning.x) * (size * font->context->dpi[0] / 72.0f) /
              font->face->units_per_EM;
     }
     msdfgl_render(font, glyphs, bufsize, projection);
@@ -879,7 +880,7 @@ float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t c
                            FT_Get_Char_Index(font->face, glyphs[i + 1].key),
                            FT_KERNING_UNSCALED, &kerning);
 
-        x += (e->advance[0] + kerning.x) * (size * font->context->dpi[0] / 72.0) /
+        x += (e->advance[0] + kerning.x) * (size * font->context->dpi[0] / 72.0f) /
              font->face->units_per_EM;
     }
     msdfgl_render(font, glyphs, bufsize, projection);
@@ -890,7 +891,7 @@ float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t c
 }
 
 float msdfgl_vertical_advance(msdfgl_font_t font, float size) {
-    return font->vertical_advance * (size * font->context->dpi[1] / 72.0) /
+    return font->vertical_advance * (size * font->context->dpi[1] / 72.0f) /
            font->face->units_per_EM;
 }
 

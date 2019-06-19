@@ -22,8 +22,8 @@ typedef struct vec2 {
 
 static inline vec2 mix(const vec2 a, const vec2 b, float weight) {
     vec2 r;
-    r.x = a.x * (1.0 - weight) + b.x * weight;
-    r.y = a.y * (1.0 - weight) + b.y * weight;
+    r.x = a.x * (1.0f - weight) + b.x * weight;
+    r.y = a.y * (1.0f - weight) + b.y * weight;
     return r;
 }
 
@@ -33,7 +33,7 @@ static inline vec2 subt(vec2 p1, vec2 p2) {
     p.y = p1.y - p2.y;
     return p;
 }
-static inline float length(const vec2 v) { return sqrt(v.x * v.x + v.y * v.y); }
+static inline float length(const vec2 v) { return (float)sqrt(v.x * v.x + v.y * v.y); }
 
 static inline vec2 divide(const vec2 v, float f) {
     vec2 p;
@@ -221,8 +221,8 @@ int msdfgl_serialize_glyph(FT_Face face, int code, char *meta_buffer,
         if (nsegments == 1) {
             int npoints = meta_buffer[meta_index + 1];
             vec2 a = segment_point(point_ptr, npoints, 0);
-            vec2 b = segment_point(point_ptr, npoints, 1 / 3.0);
-            vec2 c = segment_point(point_ptr, npoints, 2 / 3.0);
+            vec2 b = segment_point(point_ptr, npoints, 1 / 3.0f);
+            vec2 c = segment_point(point_ptr, npoints, 2 / 3.0f);
             total += shoelace(a, b);
             total += shoelace(b, c);
             total += shoelace(c, a);
@@ -271,7 +271,7 @@ int msdfgl_serialize_glyph(FT_Face face, int code, char *meta_buffer,
     }
 
     /* Calculate coloring */
-    float cross_threshold = sin(3.0);
+    float cross_threshold = (float)sin(3.0);
     unsigned long long seed = 0;
 
     meta_index = 0;
