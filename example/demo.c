@@ -1,6 +1,5 @@
 
 #include <stdio.h>
-#include <time.h>
 
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
@@ -14,7 +13,6 @@
 #endif
 
 #include <msdfgl.h>
-#include <msdf.h>
 
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
@@ -24,11 +22,6 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 GLfloat proj[4][4];
-
-typedef struct vec2 {
-    float x;
-    float y;
-} vec2;
 
 const char *vertexShaderSource = "#version 330 core\n"
                                  "layout (location = 0) in vec4 vertex;\n"
@@ -57,7 +50,6 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    /* glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); */
 
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT,
@@ -117,23 +109,6 @@ int main(int argc, char *argv[]) {
     glDeleteShader(fragmentShader);
 
     GLuint texture_uniform = glGetUniformLocation(shaderProgram, "tex");
-    
-    
-    /* msdf_font_handle _font = msdf_load_font(argv[1]); */
-    /* size_t m, p; */
-    /* msdf_glyph_buffer_size(_font, 'l', &m, &p); */
-    /* fprintf(stderr, "%lu, %lu\n", m, p); */
-    /* unsigned char *meta = (unsigned char *)malloc(m); */
-    /* vec2 *point = (vec2 *)malloc(p * 5); */
-    /* float f; */
-    /* msdf_serialize_glyph(_font, 'l', meta, point, &f, &f, &f, &f, &f); */
-    
-    /* for (int i = 0; i < 128; ++i) { */
-    /*     msdf_generate_glyph(font, i, 4.0, 4.0); */
-    /* } */
- 
-    
-
 
     msdfgl_context_t ctx = msdfgl_create_context("330 core");
 
@@ -142,7 +117,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    msdfgl_font_t font = msdfgl_load_font(ctx, argv[1], 4.0, 4.0, 1024);
+    msdfgl_font_t font = msdfgl_load_font(ctx, argv[1], 4.0, 2.0, 512);
     if (!font) {
         fprintf(stderr, "Failed to load font!\n");
         return -1;
@@ -151,8 +126,6 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Failed to generate atlas!\n");
         return -1;
     }
-    /* glfwTerminate(); */
-    /* return 0; */
     _msdfgl_ortho(0.0, SCR_WIDTH, SCR_HEIGHT, 0.0, -1.0, 1.0, proj);
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -209,81 +182,4 @@ void processInput(GLFWwindow *window) {
 void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
     glViewport(0, 0, width, height);
     _msdfgl_ortho(0.0, (float)width, (float)height, 0.0, -1.0, 1.0, proj);
-}
-
-
-
-#define meta_at(i) meta_buffer[i]
-
-void dump_segment(float *point_buffer, int npoints, int points, uint color) {
-    printf(npoints == 2 ? "linear" : "quad  ");
-    printf(" segment (%d):", color);
-    
-    for (int i = points; i < points + npoints; ++i)
-        printf("(%.2f, %.2f),", point_buffer[2 * points], point_buffer[2 * points + 1]);
-
-    printf("\b \b\n");
-}
-
-void dump_glyph(unsigned char *meta_buffer, float *point_buffer) {
-    int point_index = 0;
-    int meta_index = 0;
-
-
-    uint ncontours = meta_at(meta_index++);
-    for (uint _i = 0u; _i < ncontours; ++_i) {
-        int winding = (int)(meta_at(meta_index++)) - 1;
-        uint nsegments = meta_at(meta_index++);
-
-        uint s_color = meta_at(meta_index);
-        uint s_npoints = meta_at(meta_index + 1);
-
-        int cur_points = point_index;
-        uint cur_color = meta_at(meta_index + 2 * ((int)(nsegments) - 1));
-        uint cur_npoints = meta_at(meta_index + 2 * ((int)(nsegments) - 1) + 1);
-
-
-        uint prev_npoints = nsegments >= 2u ?
-            meta_at(meta_index + 2 * ((int)(nsegments) - 2) + 1) : s_npoints;
-        int prev_points = point_index;
-
-        for (uint _i = 0u; _i < nsegments - 1u; ++_i) {
-            uint npoints = meta_at(meta_index + 2 * (int)(_i) + 1);
-            cur_points += ((int)(npoints) - 1);
-        }
-
-        for (uint _i = 0u; (_i < (nsegments - 2u)) && nsegments >= 2u; ++_i) {
-            uint npoints = meta_at(meta_index + 2 * (int)(_i) + 1);
-            prev_points += ((int)(npoints) - 1);
-        }
-
-        printf("nsegments: %d\n", nsegments);
-        for (uint _i = 0u; _i < nsegments; ++_i) {
-
-            printf("prev");
-            dump_segment(point_buffer, prev_npoints, prev_points, 5);
-            printf(" cur");
-            dump_segment(point_buffer, (int)cur_npoints, cur_points, cur_color);
-            printf("next");
-            dump_segment(point_buffer, (int)s_npoints, point_index, s_color);
-
-            // if (_i != 0u && _i < (nsegments - 2u))
-            /* add_segment(int(prev_npoints), prev_points, int(cur_npoints), cur_points, */
-            /*             int(s_npoints), point_index, cur_color, p); */
-
-            prev_points = cur_points;
-            prev_npoints = cur_npoints;
-
-            cur_points = point_index;
-            cur_npoints = s_npoints;
-            cur_color = s_color;
-
-            s_color = meta_at(meta_index++ + 2);
-            point_index += ((int)(s_npoints) - 1);
-            s_npoints = meta_at(meta_index++ + 2);
-        }
-        point_index += 1;
-
-        /* set_contour_edge(winding, p); */
-    }
 }
