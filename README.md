@@ -10,10 +10,12 @@ The code had to go through quite a bit of modifications to make it runnable on t
 3. It does not use pointers (not supported in GLSL either)
 4. Dropped support for cubic segments (for simplicity's sake, this will probably be added later)
 
-For now tested only with OpenGL ES 3.2 on Wayland EGL, and OpenGL 3.3 Core with glfw3, on Linux with Wayland, with Intel UHD Graphics 620, and macOS Mojave on Macbook Pro 2015 (Iris Pro).
+For now tested only with OpenGL ES 3.2 on Wayland EGL, and OpenGL 3.3 Core with glfw3, on Linux with Wayland, with Intel UHD Graphics 620, and on macOS Mojave on Macbook Pro 2015 (Iris Pro), and on Windows 10 with Intel HD Graphics 515. (Ironically, I seem to currently own only Intel graphics cards...)
 
 ## Performance
-The following plot shows performance comparisons to msdfgen. The benchmark consists of generating an MSDF texture from ASCII (0 - 127) characters. It was performed with a Core i7 8550m and Intel UHD Graphics 620, on Debian Linux. Each time was calculated by taking an average of a 100 executions, and canceling out the time for glfw to create and destroy the OpenGL context.
+The following plot shows performance comparisons to `msdfgen`. The benchmark consists of generating an MSDF texture from ASCII (0 - 127) characters. It was performed with a Core i7 8550m and Intel UHD Graphics 620, on Debian Linux. Each time was calculated by taking an average of a 100 executions, and canceling out the time for glfw to create and destroy the OpenGL context.
+
+> As the shader is quite complex, it's compilation takes close to a second. However, after one compilation, the user can create as many font textures as they want. Time to compile the shader is not included in the following comparisons.
 
 The plot on the right has the exact same data, just with a logarithmic y-axis.
 
@@ -108,4 +110,3 @@ The library includes two shaders:
 - Support for cubic segments (doesn't seem to be too common in .ttf fonts)
 - Unit testing
 - Maybe render several fonts to same buffer if there is space?
-- Anti-aliasing in the default renderer
