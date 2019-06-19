@@ -1,16 +1,14 @@
 # MSDFGL - OpenGL implementation of the multi-channel signed distance-field algorithm.
 
-The MSDF algorithm implemented in this library was created by Viktor Chlumský (https://github.com/Chlumsky/msdfgen). The full credit of the algorithm goes to him, although none of the original code can be found from this repository.
-
-Details about the implementation and the benefits of MSDF can be read from his repository or his thesis, I'm not going to repeat them here.
+The MSDF algorithm implemented in this library was created by Viktor Chlumský (https://github.com/Chlumsky/msdfgen). Details about the implementation and the benefits of MSDF can be read from his repository or his thesis. MSDFGL is a GPU-accelerated implementation of his algorithm, and it was written from scratch in C.
 
 The code had to go through quite a bit of modifications to make it runnable on the GPU:
-1. It's no longer object-oriented, as the algorithm was rewritten in C (not supported in GLSL)
-2. It now runs with constant memory (as there is no dynamic allocation support in GLSL)
-3. It does not use pointers (not supported in GLSL either)
-4. Dropped support for cubic segments (for simplicity's sake, this will probably be added later)
+1. It's no longer object-oriented
+2. It now runs with constant memory (which is a requirement in shaders)
+3. It does not use pointers
+4. Dropped support for cubic segments (for simplicity's sake, this can probably be added later)
 
-For now tested only with OpenGL ES 3.2 on Wayland EGL, and OpenGL 3.3 Core with glfw3, on Linux with Wayland, with Intel UHD Graphics 620, and on macOS Mojave on Macbook Pro 2015 (Iris Pro), and on Windows 10 with Intel HD Graphics 515. (Ironically, I seem to currently own only Intel graphics cards...)
+For now tested only with OpenGL ES 3.2 on Wayland EGL, and OpenGL 3.3 Core with glfw3, on Linux with Wayland, with Intel UHD Graphics 620, and on macOS Mojave on Macbook Pro 2015 (Iris Pro), and on Windows 10 with Intel HD Graphics 515. (Funny, I seem to currently own only Intel graphics cards...)
 
 ## Performance
 The following plot shows performance comparisons to `msdfgen`. The benchmark consists of generating an MSDF texture from ASCII (0 - 127) characters. It was performed with a Core i7 8550m and Intel UHD Graphics 620, on Debian Linux. Each time was calculated by taking an average of a 100 executions, and canceling out the time for glfw to create and destroy the OpenGL context.
@@ -111,4 +109,4 @@ The library includes two shaders:
 - Edge-coloring for teardrop with 1 or 2 segments
 - Support for cubic segments (doesn't seem to be too common in .ttf fonts)
 - Unit testing
-- Maybe render several fonts to same buffer if there is space?
+- Maybe render several fonts to same buffer if there is space? What to do then if we run out of texture?
