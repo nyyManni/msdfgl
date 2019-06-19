@@ -41,8 +41,8 @@ const char *fragmentShaderSource = "#version 330 core\n"
                                    "}\n";
 
 int main(int argc, char *argv[]) {
-    if (!argv[1]) {
-        fprintf(stderr, "Usage msdfgldemo <font file>\n");
+    if (argc < 3) {
+        fprintf(stderr, "Usage msdfgldemo <font file> '<text>'\n");
         return -1;
     }
 
@@ -147,8 +147,8 @@ int main(int argc, char *argv[]) {
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        msdfgl_printf(10.0, 30.0, font, 32.0, 0xffffffff, (GLfloat *)proj,
-                      "Hello, Word!");
+        msdfgl_printf(10.0, 200.0, font, 128.0, 0xffffffff, (GLfloat *)proj,
+                      argv[2]);
 
         glUseProgram(shaderProgram);
 

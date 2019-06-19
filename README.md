@@ -55,7 +55,7 @@ make msdfgldemo
 ```
 ...and run:
 ```sh
-./msdfgldemo /path/to/font/file.ttf
+./msdfgldemo /path/to/font/file.ttf "Hello, MSDFGL!"
 ```
 
 ### Usage example:
