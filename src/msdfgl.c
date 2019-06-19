@@ -489,10 +489,6 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
         }
     }
 
-    /* We do not want the scissoring or depth testing to have any affect here. */
-    glDisable(GL_SCISSOR_TEST);
-    glDisable(GL_DEPTH_TEST);
-
     /* Allocate and fill the buffers on GPU. */
     glBindBuffer(GL_ARRAY_BUFFER, font->_meta_input_buffer);
     glBufferData(GL_ARRAY_BUFFER, meta_size_sum, metadata, GL_DYNAMIC_READ);
