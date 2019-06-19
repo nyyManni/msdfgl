@@ -105,12 +105,19 @@ void main() {
         ws.segments[i].mins[0].x = -INFINITY;
         ws.segments[i].mins[1].x = -INFINITY;
         ws.segments[i].min_true.x = -INFINITY;
+        ws.segments[i].nearest_points = -1;
     }
     int point_index = point_offset;
     int meta_index = meta_offset;
 
 
     uint ncontours = meta_at(meta_index++);
+
+    if (ncontours == 0u) {
+        color = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+    }
+
     for (uint _i = 0u; _i < ncontours; ++_i) {
         int winding = int(meta_at(meta_index++)) - 1;
         uint nsegments = meta_at(meta_index++);
@@ -337,11 +344,13 @@ float compute_distance(int segment_index, vec2 point) {
     int i = ws.segments[segment_index].min_true.xy.x < 0.0 ? IDX_NEGATIVE : IDX_POSITIVE;
     float min_distance = ws.segments[segment_index].mins[i].x;
 
-    vec2 d = distance_to_pseudo_distance(ws.segments[segment_index].nearest_npoints,
-                                         ws.segments[segment_index].nearest_points,
-                                         ws.segments[segment_index].min_true, point);
-    if (abs(d.x) < abs(min_distance))
-        min_distance = d.x;
+    if (ws.segments[segment_index].nearest_points != -1) {
+        vec2 d = distance_to_pseudo_distance(ws.segments[segment_index].nearest_npoints,
+                                             ws.segments[segment_index].nearest_points,
+                                             ws.segments[segment_index].min_true, point);
+        if (abs(d.x) < abs(min_distance))
+            min_distance = d.x;
+    }
     return min_distance;
 }
 
