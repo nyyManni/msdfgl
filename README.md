@@ -65,14 +65,14 @@ A statically linked library is created. A dll can also be compiled, but that req
 An example is provided in `example`-directory. It can be compiled (requires glfw):
 ```sh
 # In the cmake build directory
-make msdfgldemo  # nmake on Windows
+make msdfgldemo  # nmake instead of make on Windows
 ```
 ...and run:
 ```sh
 ./msdfgldemo /path/to/font/file.ttf "Hello, MSDFGL!"
 ```
 
-### Usage example:
+### Usage as a library:
 ```C
 #include <msdfgl.h>
 
@@ -110,4 +110,3 @@ The library includes two shaders:
 - Unit testing
 - Maybe render several fonts to same buffer if there is space?
 - Anti-aliasing in the default renderer
-- Glyph metadata tree needs cleanup and leaks memory
