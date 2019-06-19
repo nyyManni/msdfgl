@@ -43,7 +43,7 @@ msdfgl_map_item_t *msdfgl_map_insert(msdfgl_map_t *map, FT_ULong code) {
         int new_size = map->dynamic_alloc ? (map->dynamic_alloc * 2)
                                           : MSDFGL_MAP_DYNAMIC_INITIAL_SIZE;
 
-        msdfgl_map_item_t *new = malloc(new_size * sizeof(msdfgl_map_item_t));
+        msdfgl_map_item_t *new = calloc(new_size, sizeof(msdfgl_map_item_t));
         if (!new)
             return NULL;
 

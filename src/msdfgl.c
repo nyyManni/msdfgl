@@ -199,7 +199,7 @@ int compile_shader(const char *source, GLenum type, GLuint *shader, const char *
 }
 
 msdfgl_context_t msdfgl_create_context(const char *version) {
-    msdfgl_context_t ctx = (msdfgl_context_t)malloc(sizeof(struct _msdfgl_context));
+    msdfgl_context_t ctx = (msdfgl_context_t)calloc(1, sizeof(struct _msdfgl_context));
 
     if (!ctx)
         return NULL;
@@ -303,7 +303,8 @@ msdfgl_context_t msdfgl_create_context(const char *version) {
     glGenBuffers(1, &ctx->bbox_vbo);
 
     glBindBuffer(GL_ARRAY_BUFFER, ctx->bbox_vbo);
-    glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(GLfloat), 0, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(GLfloat), 0, GL_STREAM_READ);
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     return ctx;
@@ -328,7 +329,7 @@ void msdfgl_destroy_context(msdfgl_context_t ctx) {
 msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, float range,
                                float scale, int texture_size) {
 
-    msdfgl_font_t f = (msdfgl_font_t)malloc(sizeof(struct _msdfgl_font) * 2);
+    msdfgl_font_t f = (msdfgl_font_t)calloc(1, sizeof(struct _msdfgl_font));
     if (!f)
         return NULL;
 
@@ -411,14 +412,14 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     int new_index_size = font->_nallocated ? font->_nallocated : 1;
 
     /* Calculate the amount of memory needed on the GPU.*/
-    if (!(meta_sizes = (size_t *)malloc((end - start + 1) * sizeof(size_t))))
+    if (!(meta_sizes = (size_t *)calloc(end - start + 1, sizeof(size_t))))
         goto error;
-    if (!(point_sizes = (size_t *)malloc((end - start + 1) * sizeof(size_t))))
+    if (!(point_sizes = (size_t *)calloc(end - start + 1, sizeof(size_t))))
         goto error;
 
     /* Amount of new memory needed for the index. */
     size_t index_size = (end - start + 1) * sizeof(msdfgl_index_entry);
-    atlas_index = (msdfgl_index_entry *)malloc(index_size);
+    atlas_index = (msdfgl_index_entry *)calloc(1, index_size);
     if (!atlas_index)
         goto error;
 
@@ -431,9 +432,9 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     }
 
     /* Allocate the calculated amount. */
-    if (!(point_data = malloc(point_size_sum)))
+    if (!(point_data = calloc(point_size_sum, 1)))
         goto error;
-    if (!(metadata = malloc(meta_size_sum)))
+    if (!(metadata = calloc(meta_size_sum, 1)))
         goto error;
 
     /* Serialize the glyphs into RAM. */
@@ -493,10 +494,10 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
 
     /* Allocate and fill the buffers on GPU. */
     glBindBuffer(GL_ARRAY_BUFFER, font->_meta_input_buffer);
-    glBufferData(GL_ARRAY_BUFFER, meta_size_sum, metadata, GL_STATIC_READ);
+    glBufferData(GL_ARRAY_BUFFER, meta_size_sum, metadata, GL_DYNAMIC_READ);
 
     glBindBuffer(GL_ARRAY_BUFFER, font->_point_input_buffer);
-    glBufferData(GL_ARRAY_BUFFER, point_size_sum, point_data, GL_STATIC_READ);
+    glBufferData(GL_ARRAY_BUFFER, point_size_sum, point_data, GL_DYNAMIC_READ);
 
     if ((int)font->_nallocated == new_index_size) {
         glBindBuffer(GL_ARRAY_BUFFER, font->_index_buffer);
@@ -505,7 +506,7 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
         glGenBuffers(1, &new_buffer);
         glBindBuffer(GL_ARRAY_BUFFER, new_buffer);
         glBufferData(GL_ARRAY_BUFFER, sizeof(msdfgl_index_entry) * new_index_size, 0,
-                     GL_STATIC_READ);
+                     GL_DYNAMIC_READ);
         if (glGetError() == GL_OUT_OF_MEMORY) {
             glDeleteBuffers(1, &new_buffer);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -792,14 +793,14 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
     ssize_t bufsize = vsnprintf(NULL, 0, fmt, argp);
     va_end(argp);
 
-    char *s = malloc(bufsize + 1);
+    char *s = calloc(bufsize + 1, 1);
     if (!s)
         return x;
     va_start(argp, fmt);
     vsnprintf(s, bufsize + 1, fmt, argp);
     va_end(argp);
 
-    msdfgl_glyph_t *glyphs = malloc(bufsize * sizeof(msdfgl_glyph_t));
+    msdfgl_glyph_t *glyphs = calloc(bufsize, sizeof(msdfgl_glyph_t));
     if (!glyphs) {
         free(s);
         return x;
@@ -844,14 +845,14 @@ float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t c
     ssize_t bufsize = vswprintf(arr, 255, fmt, argp);
     va_end(argp);
 
-    wchar_t *s = malloc((bufsize + 1) * sizeof(wchar_t));
+    wchar_t *s = calloc(bufsize + 1, sizeof(wchar_t));
     if (!s)
         return x;
     va_start(argp, fmt);
     vswprintf(s, bufsize + 1, fmt, argp);
     va_end(argp);
 
-    msdfgl_glyph_t *glyphs = malloc(bufsize * sizeof(msdfgl_glyph_t));
+    msdfgl_glyph_t *glyphs = calloc(bufsize, sizeof(msdfgl_glyph_t));
     if (!glyphs) {
         free(s);
         return x;
