@@ -118,6 +118,27 @@ void main() {
         uint s_color = meta_at(meta_index);
         uint s_npoints = meta_at(meta_index + 1);
 
+        /** TODO: Move the following checks to the preprocessor, no need to do
+                  them for every fragment. */
+        /* Ignore empty contours. */
+        if (nsegments == 0u) {
+            continue;
+        }
+
+        /* Ignore contours with just one linear segment, some fonts seem to have them. */
+        if (nsegments == 1u && s_npoints == 2u) {
+            point_index += 2;
+            meta_index += 2;
+            continue;
+        }
+
+        /* Ignore contours with just two linear segments, some fonts seem to have them. */
+        if (nsegments == 2u && s_npoints == 2u && meta_at(meta_index + 3) == 2u) {
+            point_index += 4;
+            meta_index += 4;
+            continue;
+        }
+
         int cur_points = point_index;
         uint cur_color = meta_at(meta_index + 2 * (int(nsegments) - 1));
         uint cur_npoints = meta_at(meta_index + 2 * (int(nsegments) - 1) + 1);
@@ -138,7 +159,6 @@ void main() {
         }
 
         for (uint _i = 0u; _i < nsegments; ++_i) {
-
 
             add_segment(int(prev_npoints), prev_points, int(cur_npoints), cur_points,
                         int(s_npoints), point_index, cur_color, p);
