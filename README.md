@@ -105,7 +105,6 @@ The library includes two shaders:
 
 
 ## TODO:
-- There are strange artifacs all over the bitmaps, need to figure out where do they come from. (these seem to not be present on Windows for some reason...)
 - Edge-coloring for teardrop with 1 or 2 segments
 - Support for cubic segments (doesn't seem to be too common in .ttf fonts)
 - Unit testing
