@@ -21,6 +21,8 @@ The plot on the right has the exact same data, just with a logarithmic y-axis.
 
 ![Benchmarks](img/benchmarks.png)
 
+> Values 8.0000 and 31.0000 for 8.0x msdfgen were extrapolated, as the CPU implementation scales quadratically (+ I didn't want to torture my Dell's CPU anymore...)
+
 There seems to be some caching going on with the Intel driver on Linux, as the shader compilation seems to be instantaneous if the binary had been run before. First I thought that the resulting atlas texture was being cached, but generating the the texture was still fast to a font that msdfgl had never seen before. The caching behavior was not seen on macOS.
 
 With `msdfgen` the measurement did not include the time to transfer the resulted bitmaps to a texture, whereas with `msdfgl` after the execution the font was ready to be rendered with.
