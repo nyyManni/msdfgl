@@ -26,6 +26,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 message("-- Generating header generator")
 if (WIN32)
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/example/glad/include)
 
   file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/gen-shaders.bat
     "
@@ -46,7 +47,7 @@ for \%\%f in (\%2 \%3 \%4 \%5 \%6) do (
 	echo const char * _!!fname!! = >> \%OUTPUT\%
 	for /f \"tokens=*\" \%\%l in (\%\%f) do (
 	    set line=\%\%l
-	    echo \"!!line:\\=\\\\!!\" >> \%OUTPUT\%
+	    echo \"!!line:\\=\\\\!!\\n\" >> \%OUTPUT\%
 	)
 	echo ; >> \%OUTPUT\%
 )
@@ -83,7 +84,12 @@ add_custom_command(
   COMMAND ${CMAKE_CURRENT_BINARY_DIR}/gen-shaders ${SHADER_HEADER} ${SHADERS}
   DEPENDS ${SHADERS})
 
-add_library(msdfgl SHARED src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c ${SHADER_HEADER})
+if (MSVC)
+  add_library(msdfgl src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c example/glad/src/glad.c ${SHADER_HEADER})
+else()
+  add_library(msdfgl SHARED src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c ${SHADER_HEADER})
+endif()
+
 if (APPLE)
 
   # We make it the library user's responsibility to link against some OpenGL.
@@ -91,10 +97,10 @@ if (APPLE)
   add_definitions(-DGL_SILENCE_DEPRECATION)
 endif (APPLE)
 
-if(MSVC)
-  target_compile_options(msdfgl PRIVATE /W4 /WX)
+if (MSVC)
+  #target_compile_options(msdfgl PRIVATE /W4 /WX)
 else()
-  target_compile_options(msdfgl PRIVATE -Wall -Wextra -pedantic -Werror -Wno-overlength-strings -Wno-unused-parameter)
+  target_compile_options(msdfgl PRIVATE -Wall -Wextra -pedantic -Werror -Wno-overlength-strings -Wno-unused-parameter -Wno-unused-variable)
 endif()
 
 target_include_directories (msdfgl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -104,7 +110,11 @@ target_link_libraries(msdfgl ${FREETYPE_LIBRARIES})
 find_package(glfw3)
 include_directories(example/glad/include)
 add_executable(msdfgldemo EXCLUDE_FROM_ALL example/demo.c example/glad/src/glad.c)
-target_link_libraries(msdfgldemo msdfgl ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} glfw dl)
+if (MSVC)
+  target_link_libraries(msdfgldemo msdfgl ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} freetype.lib glfw3.lib glfw)
+else()
+  target_link_libraries(msdfgldemo msdfgl ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} glfw dl)
+endif()
 
 
 install(TARGETS msdfgl DESTINATION lib)
