@@ -24,6 +24,7 @@ typedef SSIZE_T ssize_t;
 
 #include "_msdfgl_shaders.h" /* Auto-generated */
 
+void dump_glyph(unsigned char *meta_buffer, float *point_buffer);
 
 struct _msdfgl_font {
     char *font_name;
@@ -444,6 +445,8 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     for (size_t i = 0; (int)i <= (int)end - start; ++i) {
         float buffer_width, buffer_height;
         msdfgl_serialize_glyph(font->face, start + i, meta_ptr, (GLfloat *)point_ptr);
+        if (start + i == 'l')
+            dump_glyph((unsigned char *)meta_ptr, (float *)point_ptr);
 
         msdfgl_map_item_t *m = msdfgl_map_insert(&font->character_index, start + i);
         m->index = font->_nglyphs + i;
@@ -900,4 +903,84 @@ GLuint _msdfgl_index_texture(msdfgl_font_t font) { return font->index_texture; }
 void msdfgl_set_dpi(msdfgl_context_t context, float horizontal, float vertical) {
     context->dpi[0] = horizontal;
     context->dpi[1] = vertical;
+}
+
+
+#define meta_at(i) meta_buffer[i]
+
+void dump_segment(float *point_buffer, int npoints, int points, uint color) {
+    printf(npoints == 2 ? "> linear" : "> quad  ");
+    printf(" segment (%d):", color);
+    
+    for (int i = 0; i < npoints; ++i)
+        printf(" (%.2f, %.2f),", point_buffer[2 * (points + i)], point_buffer[2 * (points + i) + 1]);
+
+    printf("\n");
+}
+
+void dump_glyph(unsigned char *meta_buffer, float *point_buffer) {
+    int point_index = 0;
+    int meta_index = 0;
+
+
+    uint ncontours = meta_at(meta_index++);
+    printf("ncontours: %d\n", ncontours);
+    for (uint _i = 0u; _i < ncontours; ++_i) {
+        int winding = (int)(meta_at(meta_index++)) - 1;
+        uint nsegments = meta_at(meta_index++);
+
+        uint s_color = meta_at(meta_index);
+        uint s_npoints = meta_at(meta_index + 1);
+
+        int cur_points = point_index;
+        uint cur_color = meta_at(meta_index + 2 * ((int)(nsegments) - 1));
+        uint cur_npoints = meta_at(meta_index + 2 * ((int)(nsegments) - 1) + 1);
+
+
+        uint prev_color = nsegments >= 2u ?
+            meta_at(meta_index + 2 * ((int)(nsegments) - 2)) : s_color;
+        uint prev_npoints = nsegments >= 2u ?
+            meta_at(meta_index + 2 * ((int)(nsegments) - 2) + 1) : s_npoints;
+        int prev_points = point_index;
+
+        for (uint _i = 0u; _i < nsegments - 1u; ++_i) {
+            uint npoints = meta_at(meta_index + 2 * (int)(_i) + 1);
+            cur_points += ((int)(npoints) - 1);
+        }
+
+        for (uint _i = 0u; (_i < (nsegments - 2u)) && nsegments >= 2u; ++_i) {
+            uint npoints = meta_at(meta_index + 2 * (int)(_i) + 1);
+            prev_points += ((int)(npoints) - 1);
+        }
+
+        printf("nsegments: %d\n", nsegments);
+        for (uint _i = 0u; _i < nsegments; ++_i) {
+
+            printf("prev");
+            dump_segment(point_buffer, (int)prev_npoints, prev_points, prev_color);
+            printf(" cur");
+            dump_segment(point_buffer, (int)cur_npoints, cur_points, cur_color);
+            printf("next");
+            dump_segment(point_buffer, (int)s_npoints, point_index, s_color);
+
+            // if (_i != 0u && _i < (nsegments - 2u))
+            /* add_segment(int(prev_npoints), prev_points, int(cur_npoints), cur_points, */
+            /*             int(s_npoints), point_index, cur_color, p); */
+
+            prev_points = cur_points;
+            prev_npoints = cur_npoints;
+            prev_color = cur_color;
+
+            cur_points = point_index;
+            cur_npoints = s_npoints;
+            cur_color = s_color;
+
+            s_color = meta_at(meta_index++ + 2);
+            point_index += ((int)(s_npoints) - 1);
+            s_npoints = meta_at(meta_index++ + 2);
+        }
+        point_index += 1;
+
+        /* set_contour_edge(winding, p); */
+    }
 }

@@ -35,8 +35,9 @@ Both the atlas and index textures grow as more glyphs are rendered. The user can
 
 ![Implementation](img/diagram.png)
 
-## Installation (Linux and macOS only for now):
+## Installation:
 
+### Linux and macOS
 The lib will be installed in `/usr/local/lib`, and the header into `/usr/local/include`.
 ```sh
 mkdir build
@@ -46,12 +47,25 @@ make
 sudo make install
 ```
 
+### Windows
+I tested that the compilation can be done and the example works on Windows with 32-bit MSVC 2019.
+
+`CMakeLists.txt` will require some handcrafting to get includes and linkings to freetype and glfw to work. In the end, the build should work with:
+```sh
+mkdir build
+cd build
+cmake -G "NMake Makefiles" ..
+nmake
+```
+
+A statically linked library is created. A dll can also be compiled, but that requires some changes to `CMakeLists.txt`, and some playing around with library files.
+
 ## Usage:
 
 An example is provided in `example`-directory. It can be compiled (requires glfw):
 ```sh
 # In the cmake build directory
-make msdfgldemo
+make msdfgldemo  # nmake on Windows
 ```
 ...and run:
 ```sh
@@ -90,8 +104,7 @@ The library includes two shaders:
 
 
 ## TODO:
-- There are strange artifacs all over the bitmaps, need to figure out where do they come from.
-- Cross-platform compilation
+- There are strange artifacs all over the bitmaps, need to figure out where do they come from. (these seem to not be present on Windows for some reason...)
 - Edge-coloring for teardrop with 1 or 2 segments
 - Support for cubic segments (doesn't seem to be too common in .ttf fonts)
 - Unit testing
