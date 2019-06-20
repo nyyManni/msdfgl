@@ -24,8 +24,8 @@
 #include FT_OUTLINE_H
 
 #ifdef _WIN32
-#include <windows.h>
 #include <stdint.h>
+#include <windows.h>
 #endif
 
 #ifdef __APPLE__
@@ -33,6 +33,8 @@
 #else
 #include <GL/gl.h>
 #endif
+
+#define MSDFGL_VERSION 0.2
 
 #ifdef __cplusplus
 extern "C" {
@@ -121,13 +123,13 @@ float msdfgl_vertical_advance(msdfgl_font_t font, float size);
 void msdfgl_destroy_font(msdfgl_font_t font);
 
 /**
- * Render a single glyph onto the MSFD atlas. Intented use case is to generate
+ * Render a single glyph onto the MSDF atlas. Intented use case is to generate
  * the bitmaps on-demand as the characters are appearing.
  */
 int msdfgl_generate_glyph(msdfgl_font_t font, int32_t char_code);
 
 /**
- * Render a range of glyphs onto the MSFD atlas. The range is inclusive. Intended
+ * Render a range of glyphs onto the MSDF atlas. The range is inclusive. Intended
  * use case is to initialize the atlas in the beginning with e.g. ASCII characters.
  */
 int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end);
