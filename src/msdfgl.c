@@ -785,17 +785,28 @@ void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
 }
 
 float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t color,
-                    GLfloat *projection, const char *fmt, ...) {
+                    GLfloat *projection, enum msdfgl_printf_flags flags,
+                    const void *fmt, ...) {
     va_list argp;
     va_start(argp, fmt);
-    ssize_t bufsize = vsnprintf(NULL, 0, fmt, argp);
+
+    size_t bufsize;
+    if (flags & MSDFGL_WCHAR) {
+        static wchar_t arr[255];
+        bufsize = vswprintf(arr, 255, (const wchar_t *)fmt, argp);
+    } else {
+        bufsize = vsnprintf(NULL, 0, (const char *)fmt, argp);
+    }
     va_end(argp);
 
-    char *s = calloc(bufsize + 1, 1);
+    void *s = calloc(bufsize + 1, flags & MSDFGL_WCHAR ? sizeof(wchar_t) : sizeof(char));
     if (!s)
         return x;
     va_start(argp, fmt);
-    vsnprintf(s, bufsize + 1, fmt, argp);
+    if (flags & MSDFGL_WCHAR)
+        vswprintf((wchar_t *)s, bufsize + 1, (const wchar_t *)fmt, argp);
+    else
+        vsnprintf((char *)s, bufsize + 1, (const char *)fmt, argp);
     va_end(argp);
 
     msdfgl_glyph_t *glyphs = calloc(bufsize, sizeof(msdfgl_glyph_t));
@@ -804,11 +815,14 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
         return x;
     }
 
-    for (int i = 0; i < bufsize; ++i) {
+    for (size_t i = 0; i < bufsize; ++i) {
         glyphs[i].x = x;
         glyphs[i].y = y;
         glyphs[i].color = color;
-        glyphs[i].key = (int32_t)s[i];
+        if (flags & MSDFGL_WCHAR)
+            glyphs[i].key = (int32_t)((wchar_t *)s)[i];
+        else
+            glyphs[i].key = (int32_t)((char *)s)[i];
         glyphs[i].size = (GLfloat)size;
         glyphs[i].offset = 0;
         glyphs[i].skew = 0;
@@ -818,72 +832,24 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
         if (!e)
             continue;
         FT_Vector kerning = {0, 0};
-        if (i < bufsize - 1 && FT_HAS_KERNING(font->face))
+
+        if (flags & MSDFGL_KERNING && i < bufsize - 1 && FT_HAS_KERNING(font->face))
             FT_Get_Kerning(font->face, FT_Get_Char_Index(font->face, glyphs[i].key),
                            FT_Get_Char_Index(font->face, glyphs[i + 1].key),
                            FT_KERNING_UNSCALED, &kerning);
 
-        x += (e->advance[0] + kerning.x) * (size * font->context->dpi[0] / 72.0f) /
-             font->face->units_per_EM;
+        if (flags & MSDFGL_VERTICAL)
+            y += (e->advance[1] + kerning.y) * (size * font->context->dpi[1] / 72.0f) /
+                font->face->units_per_EM;
+        else
+            x += (e->advance[0] + kerning.x) * (size * font->context->dpi[0] / 72.0f) /
+                font->face->units_per_EM;
     }
     msdfgl_render(font, glyphs, bufsize, projection);
     free(glyphs);
     free(s);
 
-    return x;
-}
-
-float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t color,
-                     GLfloat *projection, const wchar_t *fmt, ...) {
-    va_list argp;
-    va_start(argp, fmt);
-
-    /* vswprintf does not support NULL as the buffer to calculate needed size */
-    static wchar_t arr[255];
-    ssize_t bufsize = vswprintf(arr, 255, fmt, argp);
-    va_end(argp);
-
-    wchar_t *s = calloc(bufsize + 1, sizeof(wchar_t));
-    if (!s)
-        return x;
-    va_start(argp, fmt);
-    vswprintf(s, bufsize + 1, fmt, argp);
-    va_end(argp);
-
-    msdfgl_glyph_t *glyphs = calloc(bufsize, sizeof(msdfgl_glyph_t));
-    if (!glyphs) {
-        free(s);
-        return x;
-    }
-
-    for (int i = 0; i < bufsize; ++i) {
-        glyphs[i].x = x;
-        glyphs[i].y = y;
-        glyphs[i].color = color;
-        glyphs[i].key = (int32_t)s[i];
-        glyphs[i].size = (GLfloat)size;
-        glyphs[i].offset = 0;
-        glyphs[i].skew = 0;
-        glyphs[i].strength = 0.5;
-
-        msdfgl_map_item_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
-        if (!e)
-            continue;
-
-        FT_Vector kerning = {0, 0};
-        if (i < bufsize - 1 && FT_HAS_KERNING(font->face))
-            FT_Get_Kerning(font->face, FT_Get_Char_Index(font->face, glyphs[i].key),
-                           FT_Get_Char_Index(font->face, glyphs[i + 1].key),
-                           FT_KERNING_UNSCALED, &kerning);
-
-        x += (e->advance[0] + kerning.x) * (size * font->context->dpi[0] / 72.0f) /
-             font->face->units_per_EM;
-    }
-    msdfgl_render(font, glyphs, bufsize, projection);
-    free(glyphs);
-    free(s);
-
-    return x;
+    return flags & MSDFGL_VERTICAL ? y : x;
 }
 
 float msdfgl_vertical_advance(msdfgl_font_t font, float size) {

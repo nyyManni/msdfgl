@@ -87,8 +87,9 @@ font = msdfgl_load_font(context, "/usr/share/fonts/truetype/dejavu/DejaVuSansMon
 /* Loads characters 0-128 onto the textures. This is where all the GPU cycles went. */
 msdfgl_generate_ascii(font);
 
-/*            x    y          size  color       4x4 projection-matrix  */
-msdfgl_printf(0.0, 0.0, font, 18.0, 0xffffffff, (GLfloat *)projection, "Hello, MSFDGL!");
+/*            x    y           size  color       4x4 projection-matrix  flags */
+msdfgl_printf(0.0, 20.0, font, 18.0, 0xffffffff, (GLfloat *)projection, MSDFGL_KERNING,
+              "Hello, MSFDGL v%s!", MSDFGL_VERSION);
 
 /* Cleanup */
 msdfgl_destroy_font(font);

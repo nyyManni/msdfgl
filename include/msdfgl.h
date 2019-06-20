@@ -150,17 +150,46 @@ void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
                    GLfloat *projection);
 
 /**
- * Print a formatted string in coordinates `x, y`
+ * Printf options.
  */
-float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t color,
-                    GLfloat *projection, const char *fmt, ...);
+enum msdfgl_printf_flags {
+
+    /**
+     * Use FreeType kerning if it is available for the font.
+     */
+    MSDFGL_KERNING = 0x01,
+
+    /**
+     * Render wide character arrays. Give the fmt-argment as wchar_t *.
+     */
+    MSDFGL_WCHAR = 0x02,
+
+    /**
+     * Draw text vertically instead of horizontally.
+     */
+    MSDFGL_VERTICAL = 0x04,
+};
 
 /**
- * Wide-character version of `msdfgl_printf`. NOTE: Maximum of 255 characters
- * can be rendered with `msdfgl_wrprintf` due to a limitation in swprintf.
+ * Print a formatted string on currently active framebuffer.
+ *
+ * x - x coordinate of the starting glyph.
+ * y - y coordinate of the starting glyph (note that this points to the origin
+ *     of the glyph, which is usually at bottom left).
+ * font - font to use for rendering.
+ * size - font size in points (fractional sizes are allowed).
+ * color - color of the text (0xrrggbbaa).
+ * projection - 4x4 projection matrix.
+ * flags - drawing options, see `enum msdfgl_printf_flags`
+ * fmt - char * (or wchar_t *) format string.
+ * ... - substitution variables for the format string.
+ *
+ * Returns the x (y if vertical drawing is enabled) position of the glyph that
+ * would follow the rendered ones.
  */
-float msdfgl_wprintf(float x, float y, msdfgl_font_t font, float size, int32_t color,
-                     GLfloat *projection, const wchar_t *fmt, ...);
+float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t color,
+                    GLfloat *projection, enum msdfgl_printf_flags flags, const void *fmt,
+                    ...);
 
 /**
  * Set the DPI for the current session. Following draw calls will use the new DPI.
