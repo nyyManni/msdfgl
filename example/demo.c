@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
         glClear(GL_COLOR_BUFFER_BIT);
 
         msdfgl_printf(10.0, 200.0, font, 128.0, 0xffffffff, (GLfloat *)proj,
-                      argv[2]);
+                      MSDFGL_KERNING, argv[2]);
 
         glUseProgram(shaderProgram);
 
