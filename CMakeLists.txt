@@ -1,6 +1,6 @@
 
 cmake_minimum_required (VERSION 3.9)
-project (msdfgl VERSION 0.1 DESCRIPTION "OpenGL MSFD Generator and renderer")
+project (msdfgl VERSION 0.1 DESCRIPTION "OpenGL MSDF Generator and renderer")
 
 if (WIN32)
   # Modify these to match your environment
@@ -95,6 +95,8 @@ if (MSVC)
   add_library(msdfgl src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c example/glad/src/glad.c ${SHADER_HEADER})
 else()
   add_library(msdfgl SHARED src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c ${SHADER_HEADER})
+  add_library(msdfglstatic STATIC src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c ${SHADER_HEADER})
+  set_target_properties(msdfglstatic PROPERTIES OUTPUT_NAME msdfgl)
 endif()
 
 if (APPLE)
@@ -108,11 +110,14 @@ if (MSVC)
   #target_compile_options(msdfgl PRIVATE /W4 /WX)
 else()
   target_compile_options(msdfgl PRIVATE -Wall -Wextra -pedantic -Werror -Wno-overlength-strings -Wno-unused-parameter -Wno-unused-variable)
+  target_compile_options(msdfglstatic PRIVATE -Wall -Wextra -pedantic -Werror -Wno-overlength-strings -Wno-unused-parameter -Wno-unused-variable)
 endif()
 
 target_include_directories (msdfgl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories (msdfglstatic PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(msdfgl ${FREETYPE_LIBRARIES})
+target_link_libraries(msdfglstatic ${FREETYPE_LIBRARIES})
 
 if (MSVC)
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw3/include)
@@ -125,9 +130,9 @@ add_executable(msdfgldemo EXCLUDE_FROM_ALL example/demo.c example/glad/src/glad.
 if (MSVC)
   target_link_libraries(msdfgldemo msdfgl ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} ${GLFW3_LIB})
 else()
-  target_link_libraries(msdfgldemo msdfgl ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} glfw dl)
+  target_link_libraries(msdfgldemo msdfgl ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} glfw dl cglm m)
 endif()
 
 
-install(TARGETS msdfgl DESTINATION lib)
+install(TARGETS msdfgl msdfglstatic DESTINATION lib)
 install(FILES include/msdfgl.h DESTINATION include)
