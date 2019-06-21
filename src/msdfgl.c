@@ -19,11 +19,10 @@ typedef SSIZE_T ssize_t;
 #endif
 
 #include "msdfgl.h"
-#include "msdfgl_serializer.h"
 #include "msdfgl_map.h"
+#include "msdfgl_serializer.h"
 
 #include "_msdfgl_shaders.h" /* Auto-generated */
-
 
 struct _msdfgl_font {
     char *font_name;
@@ -174,7 +173,8 @@ void _msdfgl_ortho(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top,
 int compile_shader(const char *source, GLenum type, GLuint *shader, const char *version) {
 
     /* Default to versio */
-    if (!version) version = "330 core";
+    if (!version)
+        version = "330 core";
 
     *shader = glCreateShader(type);
     if (!*shader) {
@@ -397,7 +397,8 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     msdfgl_context_t ctx = font->context;
     int retval = -2;
 
-    if (end - start < 0)
+    int nrender = end - start;
+    if (nrender < 0)
         return -1;
 
     if (!font->_nglyphs && !start) {
@@ -413,19 +414,19 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     int new_index_size = font->_nallocated ? font->_nallocated : 1;
 
     /* Calculate the amount of memory needed on the GPU.*/
-    if (!(meta_sizes = (size_t *)calloc(end - start + 1, sizeof(size_t))))
+    if (!(meta_sizes = (size_t *)calloc(nrender + 1, sizeof(size_t))))
         goto error;
-    if (!(point_sizes = (size_t *)calloc(end - start + 1, sizeof(size_t))))
+    if (!(point_sizes = (size_t *)calloc(nrender + 1, sizeof(size_t))))
         goto error;
 
     /* Amount of new memory needed for the index. */
-    size_t index_size = (end - start + 1) * sizeof(msdfgl_index_entry);
+    size_t index_size = (nrender + 1) * sizeof(msdfgl_index_entry);
     atlas_index = (msdfgl_index_entry *)calloc(1, index_size);
     if (!atlas_index)
         goto error;
 
     size_t meta_size_sum = 0, point_size_sum = 0;
-    for (size_t i = 0; (int)i <= (int)end - start; ++i) {
+    for (size_t i = 0; (int)i <= (int)nrender; ++i) {
         msdfgl_glyph_buffer_size(font->face, start + i, &meta_sizes[i], &point_sizes[i]);
 
         meta_size_sum += meta_sizes[i];
@@ -441,7 +442,7 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     /* Serialize the glyphs into RAM. */
     char *meta_ptr = metadata;
     char *point_ptr = point_data;
-    for (size_t i = 0; (int)i <= (int)end - start; ++i) {
+    for (size_t i = 0; (int)i <= (int)nrender; ++i) {
         float buffer_width, buffer_height;
         msdfgl_serialize_glyph(font->face, start + i, meta_ptr, (GLfloat *)point_ptr);
 
@@ -464,8 +465,9 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
             font->_offset_x = 1;
             font->_y_increment = 0;
         }
-        font->_y_increment =
-            (size_t)buffer_height > font->_y_increment ? (size_t)buffer_height : font->_y_increment;
+        font->_y_increment = (size_t)buffer_height > font->_y_increment
+                                 ? (size_t)buffer_height
+                                 : font->_y_increment;
 
         atlas_index[i].offset_x = (GLfloat)font->_offset_x;
         atlas_index[i].offset_y = (GLfloat)font->_offset_y;
@@ -630,7 +632,7 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
 
     int meta_offset = 0;
     int point_offset = 0;
-    for (int i = 0; i <= end - start; ++i) {
+    for (int i = 0; i <= nrender; ++i) {
         msdfgl_index_entry g = atlas_index[i];
         float w = g.size_x;
         float h = g.size_y;
@@ -666,8 +668,8 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    font->_nglyphs += (end - start + 1);
-    retval = end - start;
+    font->_nglyphs += (nrender + 1);
+    retval = nrender;
 
 error:
 
@@ -753,7 +755,8 @@ void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
                        (GLfloat *)font->atlas_projection);
 
     glUniformMatrix4fv(font->context->window_projection_uniform, 1, GL_FALSE, projection);
-    glUniform1f(font->context->_padding_uniform, (GLfloat)(font->range / 2.0 * SERIALIZER_SCALE));
+    glUniform1f(font->context->_padding_uniform,
+                (GLfloat)(font->range / 2.0 * SERIALIZER_SCALE));
     glUniform1f(font->context->_units_per_em_uniform, (GLfloat)font->face->units_per_EM);
     glUniform2f(font->context->_dpi_uniform, font->context->dpi[0],
                 font->context->dpi[1]);
@@ -785,8 +788,8 @@ void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
 }
 
 float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t color,
-                    GLfloat *projection, enum msdfgl_printf_flags flags,
-                    const void *fmt, ...) {
+                    GLfloat *projection, enum msdfgl_printf_flags flags, const void *fmt,
+                    ...) {
     va_list argp;
     va_start(argp, fmt);
 
@@ -840,10 +843,10 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
 
         if (flags & MSDFGL_VERTICAL)
             y += (e->advance[1] + kerning.y) * (size * font->context->dpi[1] / 72.0f) /
-                font->face->units_per_EM;
+                 font->face->units_per_EM;
         else
             x += (e->advance[0] + kerning.x) * (size * font->context->dpi[0] / 72.0f) /
-                font->face->units_per_EM;
+                 font->face->units_per_EM;
     }
     msdfgl_render(font, glyphs, bufsize, projection);
     free(glyphs);
