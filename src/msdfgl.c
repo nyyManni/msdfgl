@@ -392,16 +392,17 @@ void msdfgl_destroy_font(msdfgl_font_t font) {
     free(font);
 }
 
-
-int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
+int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t end,
+                                     unsigned int range, int32_t *keys, int nkeys) {
     msdfgl_context_t ctx = font->context;
     int retval = -2;
 
-    int nrender = end - start;
+    int nrender = range ? (end - start) : (nkeys - 1);
+
     if (nrender < 0)
         return -1;
 
-    if (!font->_nglyphs && !start) {
+    if (!font->_nglyphs && range && !start) {
         /* We can generate an optimized lookup for the atlas index. */
         font->_direct_lookup_upper_limit = end;
     }
@@ -427,7 +428,8 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
 
     size_t meta_size_sum = 0, point_size_sum = 0;
     for (size_t i = 0; (int)i <= (int)nrender; ++i) {
-        msdfgl_glyph_buffer_size(font->face, start + i, &meta_sizes[i], &point_sizes[i]);
+        int index = range ? start + (int)i : keys[i];
+        msdfgl_glyph_buffer_size(font->face, index, &meta_sizes[i], &point_sizes[i]);
 
         meta_size_sum += meta_sizes[i];
         point_size_sum += point_sizes[i];
@@ -444,9 +446,11 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     char *point_ptr = point_data;
     for (size_t i = 0; (int)i <= (int)nrender; ++i) {
         float buffer_width, buffer_height;
-        msdfgl_serialize_glyph(font->face, start + i, meta_ptr, (GLfloat *)point_ptr);
 
-        msdfgl_map_item_t *m = msdfgl_map_insert(&font->character_index, start + i);
+        int index = range ? start + (int)i : keys[i];
+        msdfgl_serialize_glyph(font->face, index, meta_ptr, (GLfloat *)point_ptr);
+
+        msdfgl_map_item_t *m = msdfgl_map_insert(&font->character_index, index);
         m->index = font->_nglyphs + i;
         m->advance[0] = (float)font->face->glyph->metrics.horiAdvance;
         m->advance[1] = (float)font->face->glyph->metrics.vertAdvance;
@@ -685,10 +689,19 @@ error:
         free(metadata);
 
     return retval;
+
+}
+
+int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
+    return _msdfgl_generate_glyphs_internal(font, start, end, 1, NULL, 0);
 }
 
 int msdfgl_generate_glyph(msdfgl_font_t font, int32_t character) {
-    return msdfgl_generate_glyphs(font, character, character);
+    return _msdfgl_generate_glyphs_internal(font, character, character, 1, NULL, 0);
+}
+
+int msdfgl_generate_glyph_list(msdfgl_font_t font, int32_t *list, size_t n) {
+    return _msdfgl_generate_glyphs_internal(font, 0, 0, 0, list, n);
 }
 
 void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
