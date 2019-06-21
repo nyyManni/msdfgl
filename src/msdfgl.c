@@ -11,11 +11,8 @@ typedef SSIZE_T ssize_t;
 #include FT_FREETYPE_H
 
 #ifdef __linux__
-
 /* We don't want to link to any specific OpenGL implementation. */
 #define GL_GLEXT_PROTOTYPES
-#else
-/* Figure out something. */
 #endif
 
 #include "msdfgl.h"
@@ -652,9 +649,9 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
         glUniform1i(ctx->_point_offset_uniform, point_offset / (2 * sizeof(GLfloat)));
         glUniform1f(ctx->_glyph_height_uniform, g.size_y);
 
-        /* Do not bother rendering control characters */
-        /* if (i > 31 && !(i > 126 && i < 160)) */
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        /* No need for draw call if there are no contours */
+        if (((unsigned char *)metadata)[meta_offset])
+            glDrawArrays(GL_TRIANGLES, 0, 6);
 
         meta_offset += meta_sizes[i];
         point_offset += point_sizes[i];

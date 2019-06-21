@@ -113,11 +113,6 @@ void main() {
 
     uint ncontours = meta_at(meta_index++);
 
-    if (ncontours == 0u) {
-        color = vec4(0.0, 0.0, 0.0, 1.0);
-        return;
-    }
-
     for (uint _i = 0u; _i < ncontours; ++_i) {
         int winding = int(meta_at(meta_index++)) - 1;
         uint nsegments = meta_at(meta_index++);
