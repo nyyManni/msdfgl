@@ -152,7 +152,7 @@ int MSDFGL_EXPORT msdfgl_generate_glyph_list(msdfgl_font_t font, int32_t *list, 
  * Shortcuts for common generators.
  */
 #define msdfgl_generate_ascii(font) msdfgl_generate_glyphs(font, 0, 127)
-#define msdfgl_generate_ascii_ext(font) msdfgl_generate_glyphs(font, 0, 254)
+#define msdfgl_generate_ascii_ext(font) msdfgl_generate_glyphs(font, 0, 255)
 
 /**
  * Render a list of glyphs.
