@@ -1,6 +1,6 @@
 
 cmake_minimum_required (VERSION 3.9)
-project (msdfgl VERSION 0.1 DESCRIPTION "OpenGL MSDF Generator and renderer")
+project (msdfgl VERSION 0.2 DESCRIPTION "OpenGL MSDF Generator and renderer")
 
 if (WIN32)
   # Modify these to match your environment
@@ -93,6 +93,10 @@ add_custom_command(
 
 if (MSVC)
   add_library(msdfgl src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c example/glad/src/glad.c ${SHADER_HEADER})
+  add_library(msdfglshared SHARED src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c example/glad/src/glad.c ${SHADER_HEADER})
+  set_target_properties(msdfglshared PROPERTIES OUTPUT_NAME msdfgl)
+  target_compile_definitions(msdfglshared PRIVATE MSDFGL_EXPORTS=1)
+
 else()
   add_library(msdfgl SHARED src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c ${SHADER_HEADER})
   add_library(msdfglstatic STATIC src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c ${SHADER_HEADER})
