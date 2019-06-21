@@ -134,7 +134,7 @@ add_executable(msdfgldemo EXCLUDE_FROM_ALL example/demo.c example/glad/src/glad.
 if (MSVC)
   target_link_libraries(msdfgldemo msdfgl ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} ${GLFW3_LIB})
 else()
-  target_link_libraries(msdfgldemo msdfgl ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} glfw dl cglm m)
+  target_link_libraries(msdfgldemo msdfgl ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} glfw dl)
 endif()
 
 
