@@ -397,9 +397,9 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
     msdfgl_context_t ctx = font->context;
     int retval = -2;
 
-    int nrender = range ? (end - start) : (nkeys - 1);
+    int nrender = range ? (end - start) : nkeys;
 
-    if (nrender < 0)
+    if (nrender <= 0)
         return -1;
 
     if (!font->_nglyphs && range && !start) {
@@ -415,19 +415,19 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
     int new_index_size = font->_nallocated ? font->_nallocated : 1;
 
     /* Calculate the amount of memory needed on the GPU.*/
-    if (!(meta_sizes = (size_t *)calloc(nrender + 1, sizeof(size_t))))
+    if (!(meta_sizes = (size_t *)calloc(nrender, sizeof(size_t))))
         goto error;
-    if (!(point_sizes = (size_t *)calloc(nrender + 1, sizeof(size_t))))
+    if (!(point_sizes = (size_t *)calloc(nrender, sizeof(size_t))))
         goto error;
 
     /* Amount of new memory needed for the index. */
-    size_t index_size = (nrender + 1) * sizeof(msdfgl_index_entry);
+    size_t index_size = nrender * sizeof(msdfgl_index_entry);
     atlas_index = (msdfgl_index_entry *)calloc(1, index_size);
     if (!atlas_index)
         goto error;
 
     size_t meta_size_sum = 0, point_size_sum = 0;
-    for (size_t i = 0; (int)i <= (int)nrender; ++i) {
+    for (size_t i = 0; (int)i < (int)nrender; ++i) {
         int index = range ? start + (int)i : keys[i];
         msdfgl_glyph_buffer_size(font->face, index, &meta_sizes[i], &point_sizes[i]);
 
@@ -444,7 +444,7 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
     /* Serialize the glyphs into RAM. */
     char *meta_ptr = metadata;
     char *point_ptr = point_data;
-    for (size_t i = 0; (int)i <= (int)nrender; ++i) {
+    for (size_t i = 0; (int)i < (int)nrender; ++i) {
         float buffer_width, buffer_height;
 
         int index = range ? start + (int)i : keys[i];
@@ -490,7 +490,7 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
         if (new_texture_height > font->context->_max_texture_size) {
             goto error;
         }
-        while (((int)(font->_nglyphs + i) + 1) > new_index_size) {
+        while ((int)(font->_nglyphs + i) > new_index_size) {
             new_index_size *= 2;
         }
     }
@@ -636,7 +636,7 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
 
     int meta_offset = 0;
     int point_offset = 0;
-    for (int i = 0; i <= nrender; ++i) {
+    for (int i = 0; i < nrender; ++i) {
         msdfgl_index_entry g = atlas_index[i];
         float w = g.size_x;
         float h = g.size_y;
@@ -672,11 +672,10 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    font->_nglyphs += (nrender + 1);
+    font->_nglyphs += nrender;
     retval = nrender;
 
 error:
-
     if (meta_sizes)
         free(meta_sizes);
     if (point_sizes)
@@ -689,15 +688,14 @@ error:
         free(metadata);
 
     return retval;
-
 }
 
 int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
-    return _msdfgl_generate_glyphs_internal(font, start, end, 1, NULL, 0);
+    return _msdfgl_generate_glyphs_internal(font, start, end + 1, 1, NULL, 0);
 }
 
 int msdfgl_generate_glyph(msdfgl_font_t font, int32_t character) {
-    return _msdfgl_generate_glyphs_internal(font, character, character, 1, NULL, 0);
+    return _msdfgl_generate_glyphs_internal(font, character, character + 1, 1, NULL, 0);
 }
 
 int msdfgl_generate_glyph_list(msdfgl_font_t font, int32_t *list, size_t n) {
