@@ -116,8 +116,9 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Failed to create context!\n");
         return -1;
     }
+    msdfgl_atlas_t atlas = msdfgl_create_atlas(ctx, 1024, 2);
 
-    msdfgl_font_t font = msdfgl_load_font(ctx, argv[1], 4.0, 2.0, 512);
+    msdfgl_font_t font = msdfgl_load_font(ctx, argv[1], 4.0, 2.0, atlas);
     if (!font) {
         fprintf(stderr, "Failed to load font!\n");
         return -1;
