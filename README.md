@@ -13,7 +13,7 @@ The code had to go through quite a bit of modifications to make it runnable on t
 For now tested only with OpenGL ES 3.2 on Wayland EGL, and OpenGL 3.3 Core with glfw3, on Linux with Wayland, with Intel UHD Graphics 620, and on macOS Mojave on Macbook Pro 2015 (Iris Pro), and on Windows 10 with Intel HD Graphics 515. (Funny, I seem to currently own only Intel graphics cards...)
 
 ## Performance
-The following plot shows performance comparisons to `msdfgen`. The benchmark consists of generating an MSDF texture from ASCII (0 - 127) characters. It was performed with a Core i7 8550m and Intel UHD Graphics 620, on Debian Linux. Each time was calculated by taking an average of a 100 executions, and canceling out the time for glfw to create and destroy the OpenGL context.
+The following plot shows performance comparisons to `msdfgen`. The benchmark consists of generating an MSDF texture from ASCII (0 - 127) characters for font `DejaVu Sans`. It was performed with a Core i7 8550m and Intel UHD Graphics 620, on Debian Linux. Each time was calculated by taking an average of a 100 executions, and canceling out the time for glfw to create and destroy the OpenGL context. 
 
 > As the shader is quite complex, it's compilation takes close to a second. However, after one compilation, the user can create as many font textures as they want. Time to compile the shader is not included in the following comparisons.
 
