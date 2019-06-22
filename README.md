@@ -1,4 +1,4 @@
-# MSDFGL - OpenGL implementation of the multi-channel signed distance-field algorithm.
+# MSDFGL - OpenGL-accelerated implementation of the multi-channel signed distance-field algorithm.
 
 ![Demo](img/scale.png)
 
