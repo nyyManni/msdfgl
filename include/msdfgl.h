@@ -50,6 +50,8 @@ extern "C" {
 #endif
 
 typedef struct _msdfgl_context *msdfgl_context_t;
+typedef struct _msdfgl_font *msdfgl_font_t;
+typedef struct _msdfgl_atlas *msdfgl_atlas_t;
 
 /**
  * Compile shaders and configure uniforms.
@@ -60,14 +62,12 @@ typedef struct _msdfgl_context *msdfgl_context_t;
  *
  * Returns a new MSDF GL context, or NULL if creating the context failed.
  */
-msdfgl_context_t MSDFGL_EXPORT msdfgl_create_context(const char *version);
+MSDFGL_EXPORT msdfgl_context_t msdfgl_create_context(const char *version);
 
 /**
  * Release resources allocated by `msdfgl_crate_context`.
  */
-void MSDFGL_EXPORT msdfgl_destroy_context(msdfgl_context_t ctx);
-
-typedef struct _msdfgl_font *msdfgl_font_t;
+MSDFGL_EXPORT void msdfgl_destroy_context(msdfgl_context_t ctx);
 
 /**
  * Serialized format of a glyph.
@@ -116,37 +116,49 @@ typedef struct _msdfgl_glyph {
 } msdfgl_glyph_t;
 
 /**
+ * Allocate textures for a font atlas.
+ */
+MSDFGL_EXPORT msdfgl_atlas_t msdfgl_create_atlas(msdfgl_context_t ctx, int texture_width,
+                                                 int padding);
+
+/**
+ * Release resources of a font atlas.
+ */
+MSDFGL_EXPORT void msdfgl_destroy_atlas(msdfgl_atlas_t atlas);
+
+/**
  * Load font from a font file and generate textures and buffers for it.
  */
-msdfgl_font_t MSDFGL_EXPORT msdfgl_load_font(msdfgl_context_t ctx, const char *font_name,
-                                             float range, float scale, int texture_size);
+MSDFGL_EXPORT msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name,
+                                             float range, float scale,
+                                             msdfgl_atlas_t atlas);
 
 /**
  * Get vertical advance of the font with the given size.
  */
-float MSDFGL_EXPORT msdfgl_vertical_advance(msdfgl_font_t font, float size);
+MSDFGL_EXPORT float msdfgl_vertical_advance(msdfgl_font_t font, float size);
 
 /**
  * Release resources allocated by `msdfgl_load_font`.
  */
-void MSDFGL_EXPORT msdfgl_destroy_font(msdfgl_font_t font);
+MSDFGL_EXPORT void msdfgl_destroy_font(msdfgl_font_t font);
 
 /**
  * Render a single glyph onto the MSDF atlas. Intented use case is to generate
  * the bitmaps on-demand as the characters are appearing.
  */
-int MSDFGL_EXPORT msdfgl_generate_glyph(msdfgl_font_t font, int32_t char_code);
+MSDFGL_EXPORT int msdfgl_generate_glyph(msdfgl_font_t font, int32_t char_code);
 
 /**
  * Render a range of glyphs onto the MSDF atlas. The range is inclusive. Intended
  * use case is to initialize the atlas in the beginning with e.g. ASCII characters.
  */
-int MSDFGL_EXPORT msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end);
+MSDFGL_EXPORT int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end);
 
 /**
  * Render arbitrary character codes in bulk.
  */
-int MSDFGL_EXPORT msdfgl_generate_glyph_list(msdfgl_font_t font, int32_t *list, size_t n);
+MSDFGL_EXPORT int msdfgl_generate_glyph_list(msdfgl_font_t font, int32_t *list, size_t n);
 
 /**
  * Shortcuts for common generators.
@@ -157,7 +169,7 @@ int MSDFGL_EXPORT msdfgl_generate_glyph_list(msdfgl_font_t font, int32_t *list, 
 /**
  * Render a list of glyphs.
  */
-void MSDFGL_EXPORT msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
+MSDFGL_EXPORT void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
                                  GLfloat *projection);
 
 /**
@@ -198,7 +210,7 @@ enum msdfgl_printf_flags {
  * Returns the x (y if vertical drawing is enabled) position of the glyph that
  * would follow the rendered ones.
  */
-float MSDFGL_EXPORT msdfgl_printf(float x, float y, msdfgl_font_t font, float size,
+MSDFGL_EXPORT float msdfgl_printf(float x, float y, msdfgl_font_t font, float size,
                                   int32_t color, GLfloat *projection,
                                   enum msdfgl_printf_flags flags, const void *fmt, ...);
 
@@ -208,24 +220,24 @@ float MSDFGL_EXPORT msdfgl_printf(float x, float y, msdfgl_font_t font, float si
  * has non-square pixels.
  * The default DPI is (72, 72).
  */
-void MSDFGL_EXPORT msdfgl_set_dpi(msdfgl_context_t context, float horizontal,
+MSDFGL_EXPORT void msdfgl_set_dpi(msdfgl_context_t context, float horizontal,
                                   float vertical);
 
 /* Plumbing commands. In case you want to build your own renderer. */
 /**
  * Generates an orthographic projection (similar to glm's ortho).
  */
-void MSDFGL_EXPORT _msdfgl_ortho(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top,
+MSDFGL_EXPORT void _msdfgl_ortho(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top,
                                  GLfloat nearVal, GLfloat farVal, GLfloat dest[][4]);
 
 /**
  * Get the atlas texture of the given font.
  */
-GLuint MSDFGL_EXPORT _msdfgl_atlas_texture(msdfgl_font_t font);
+MSDFGL_EXPORT GLuint _msdfgl_atlas_texture(msdfgl_font_t font);
 /**
  * Get the index texture of the given font.
  */
-GLuint MSDFGL_EXPORT _msdfgl_index_texture(msdfgl_font_t font);
+MSDFGL_EXPORT GLuint _msdfgl_index_texture(msdfgl_font_t font);
 #ifdef __cplusplus
 }
 #endif

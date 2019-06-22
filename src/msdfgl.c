@@ -21,46 +21,69 @@ typedef SSIZE_T ssize_t;
 
 #include "_msdfgl_shaders.h" /* Auto-generated */
 
-struct _msdfgl_font {
-    char *font_name;
 
-    float scale;
-    float range;
-    int texture_width;
+struct _msdfgl_atlas {
 
-    float vertical_advance;
+    int _refcount;  /* Amount of fonts using this atlas */
+    int _implicit;  /* Set to 1 if the atlas was created automatically and not by user */
 
-    msdfgl_map_t character_index;
-
-    GLfloat atlas_projection[4][4];
+    GLfloat projection[4][4];
 
     /**
      * 2D RGBA atlas texture containing all MSDF-glyph bitmaps.
      */
     GLuint atlas_texture;
-    GLuint _atlas_framebuffer;
+    GLuint atlas_framebuffer;
 
     /**
      * 1D buffer containing glyph position information per character in the
      * atlas texture.
      */
     GLuint index_texture;
-    GLuint _index_buffer;
+    GLuint index_buffer;
 
     /**
      * Amount of glyphs currently rendered on the textures.
      */
-    size_t _nglyphs;
+    size_t nglyphs;
 
     /**
      * The current size of the buffer index texture.
      */
-    size_t _nallocated;
+    size_t nallocated;
 
+    int texture_width;
     /**
      * The amount of allocated texture height.
      */
-    int _texture_height;
+    int texture_height;
+
+    /**
+     * The location in the atlas where the next bitmap would be rendered.
+     */
+    size_t offset_y;
+    size_t offset_x;
+    size_t y_increment;
+
+    /**
+     * Amount of pixels to leave blank between MSDF bitmaps.
+     */
+    int padding;
+
+};
+
+
+struct _msdfgl_font {
+    char *font_name;
+
+    float scale;
+    float range;
+
+    float vertical_advance;
+
+    msdfgl_map_t character_index;
+
+    msdfgl_atlas_t atlas;
 
     /**
      * MSDFGL context handle.
@@ -71,18 +94,6 @@ struct _msdfgl_font {
      * FreeType Face handle.
      */
     FT_Face face;
-
-    /**
-     * The location in the atlas where the next bitmap would be rendered.
-     */
-    size_t _offset_y;
-    size_t _offset_x;
-    size_t _y_increment;
-
-    /**
-     * Amount of pixels to leave blank between MSDF bitmaps.
-     */
-    int atlas_padding;
 
     /**
      * Texture buffer objects for serialized FreeType data input.
@@ -324,12 +335,49 @@ void msdfgl_destroy_context(msdfgl_context_t ctx) {
     free(ctx);
 }
 
+msdfgl_atlas_t msdfgl_create_atlas(msdfgl_context_t ctx, int texture_width, int padding) {
+    msdfgl_atlas_t atlas = calloc(1, sizeof(struct _msdfgl_atlas));
+    if (!atlas) return NULL;
+
+    atlas->texture_width = texture_width ? texture_width : ctx->_max_texture_size;
+
+    atlas->nglyphs = 0;
+    atlas->nallocated = 0;
+    atlas->offset_x = 1;
+    atlas->offset_y = 1;
+    atlas->y_increment = 0;
+    atlas->texture_height = 0;
+    atlas->padding = padding;
+
+    glGenBuffers(1, &atlas->index_buffer);
+    glGenTextures(1, &atlas->index_texture);
+
+    glGenTextures(1, &atlas->atlas_texture);
+    glGenFramebuffers(1, &atlas->atlas_framebuffer);
+
+    atlas->_refcount = 0;
+
+    return atlas;
+}
+void msdfgl_destroy_atlas(msdfgl_atlas_t atlas) {
+    glDeleteBuffers(1, &atlas->index_buffer);
+    glDeleteTextures(1, &atlas->index_texture);
+
+    glDeleteTextures(1, &atlas->atlas_texture);
+    glDeleteFramebuffers(1, &atlas->atlas_framebuffer);
+
+    free(atlas);
+}
+
 msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, float range,
-                               float scale, int texture_size) {
+                               float scale, msdfgl_atlas_t atlas) {
 
     msdfgl_font_t f = (msdfgl_font_t)calloc(1, sizeof(struct _msdfgl_font));
     if (!f)
         return NULL;
+
+    f->context = ctx;
+    f->_direct_lookup_upper_limit = 0;
 
     if (FT_New_Face(ctx->ft_library, font_name, 0, &f->face)) {
         free(f);
@@ -339,17 +387,12 @@ msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, floa
     f->scale = scale;
     f->range = range;
 
-    f->texture_width = texture_size ? texture_size : ctx->_max_texture_size;
-
-    f->context = ctx;
-    f->_nglyphs = 0;
-    f->_nallocated = 0;
-    f->_offset_x = 1;
-    f->_offset_y = 1;
-    f->_y_increment = 0;
-    f->_texture_height = 0;
-    f->_direct_lookup_upper_limit = 0;
-    f->atlas_padding = 2;
+    if (!(f->atlas = atlas ? atlas : msdfgl_create_atlas(ctx, 0, 2))) {
+        free(f);
+        return NULL;
+    }
+    f->atlas->_refcount++;
+    f->atlas->_implicit = atlas == NULL;
 
     f->vertical_advance = (float)(f->face->ascender - f->face->descender);
 
@@ -359,12 +402,6 @@ msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, floa
     glGenBuffers(1, &f->_point_input_buffer);
     glGenTextures(1, &f->_meta_input_texture);
     glGenTextures(1, &f->_point_input_texture);
-
-    glGenBuffers(1, &f->_index_buffer);
-    glGenTextures(1, &f->index_texture);
-
-    glGenTextures(1, &f->atlas_texture);
-    glGenFramebuffers(1, &f->_atlas_framebuffer);
 
     return f;
 }
@@ -378,11 +415,8 @@ void msdfgl_destroy_font(msdfgl_font_t font) {
     glDeleteTextures(1, &font->_meta_input_texture);
     glDeleteTextures(1, &font->_point_input_texture);
 
-    glDeleteBuffers(1, &font->_index_buffer);
-    glDeleteTextures(1, &font->index_texture);
-
-    glDeleteTextures(1, &font->atlas_texture);
-    glDeleteFramebuffers(1, &font->_atlas_framebuffer);
+    if (font->atlas->_implicit && !--font->atlas->_refcount)
+        msdfgl_destroy_atlas(font->atlas);
 
     msdfgl_map_destroy(&font->character_index);
 
@@ -399,7 +433,9 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
     if (nrender <= 0)
         return -1;
 
-    if (!font->_nglyphs && range && !start) {
+    msdfgl_atlas_t atlas = font->atlas;
+
+    if (!atlas->nglyphs && range && !start) {
         /* We can generate an optimized lookup for the atlas index. */
         font->_direct_lookup_upper_limit = end;
     }
@@ -408,8 +444,8 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
     void *point_data = NULL, *metadata = NULL;
 
     /* We will start with a square texture. */
-    int new_texture_height = font->_texture_height ? font->_texture_height : 1;
-    int new_index_size = font->_nallocated ? font->_nallocated : 1;
+    int new_texture_height = atlas->texture_height ? atlas->texture_height : 1;
+    int new_index_size = atlas->nallocated ? atlas->nallocated : 1;
 
     /* Calculate the amount of memory needed on the GPU.*/
     if (!(meta_sizes = (size_t *)calloc(nrender, sizeof(size_t))))
@@ -448,7 +484,7 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
         msdfgl_serialize_glyph(font->face, index, meta_ptr, (GLfloat *)point_ptr);
 
         msdfgl_map_item_t *m = msdfgl_map_insert(&font->character_index, index);
-        m->index = font->_nglyphs + i;
+        m->index = atlas->nglyphs + i;
         m->advance[0] = (float)font->face->glyph->metrics.horiAdvance;
         m->advance[1] = (float)font->face->glyph->metrics.vertAdvance;
 
@@ -461,17 +497,17 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
         meta_ptr += meta_sizes[i];
         point_ptr += point_sizes[i];
 
-        if (font->_offset_x + buffer_width > font->texture_width) {
-            font->_offset_y += (font->_y_increment + font->atlas_padding);
-            font->_offset_x = 1;
-            font->_y_increment = 0;
+        if (atlas->offset_x + buffer_width > atlas->texture_width) {
+            atlas->offset_y += (atlas->y_increment + atlas->padding);
+            atlas->offset_x = 1;
+            atlas->y_increment = 0;
         }
-        font->_y_increment = (size_t)buffer_height > font->_y_increment
+        atlas->y_increment = (size_t)buffer_height > atlas->y_increment
                                  ? (size_t)buffer_height
-                                 : font->_y_increment;
+                                 : atlas->y_increment;
 
-        atlas_index[i].offset_x = (GLfloat)font->_offset_x;
-        atlas_index[i].offset_y = (GLfloat)font->_offset_y;
+        atlas_index[i].offset_x = (GLfloat)atlas->offset_x;
+        atlas_index[i].offset_y = (GLfloat)atlas->offset_y;
         atlas_index[i].size_x = buffer_width;
         atlas_index[i].size_y = buffer_height;
         atlas_index[i].bearing_x = (GLfloat)font->face->glyph->metrics.horiBearingX;
@@ -479,15 +515,15 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
         atlas_index[i].glyph_width = (GLfloat)font->face->glyph->metrics.width;
         atlas_index[i].glyph_height = (GLfloat)font->face->glyph->metrics.height;
 
-        font->_offset_x += (size_t)buffer_width + font->atlas_padding;
+        atlas->offset_x += (size_t)buffer_width + atlas->padding;
 
-        while ((font->_offset_y + buffer_height) > new_texture_height) {
+        while ((atlas->offset_y + buffer_height) > new_texture_height) {
             new_texture_height *= 2;
         }
         if (new_texture_height > font->context->_max_texture_size) {
             goto error;
         }
-        while ((int)(font->_nglyphs + i) > new_index_size) {
+        while ((int)(atlas->nglyphs + i) > new_index_size) {
             new_index_size *= 2;
         }
     }
@@ -499,8 +535,8 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
     glBindBuffer(GL_ARRAY_BUFFER, font->_point_input_buffer);
     glBufferData(GL_ARRAY_BUFFER, point_size_sum, point_data, GL_DYNAMIC_READ);
 
-    if ((int)font->_nallocated == new_index_size) {
-        glBindBuffer(GL_ARRAY_BUFFER, font->_index_buffer);
+    if ((int)atlas->nallocated == new_index_size) {
+        glBindBuffer(GL_ARRAY_BUFFER, atlas->index_buffer);
     } else {
         GLuint new_buffer;
         glGenBuffers(1, &new_buffer);
@@ -512,17 +548,17 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             goto error;
         }
-        if (font->_nglyphs) {
-            glBindBuffer(GL_COPY_READ_BUFFER, font->_index_buffer);
+        if (atlas->nglyphs) {
+            glBindBuffer(GL_COPY_READ_BUFFER, atlas->index_buffer);
             glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_ARRAY_BUFFER, 0, 0,
-                                font->_nglyphs * sizeof(msdfgl_index_entry));
+                                atlas->nglyphs * sizeof(msdfgl_index_entry));
             glBindBuffer(GL_COPY_READ_BUFFER, 0);
         }
-        font->_nallocated = new_index_size;
-        glDeleteBuffers(1, &font->_index_buffer);
-        font->_index_buffer = new_buffer;
+        atlas->nallocated = new_index_size;
+        glDeleteBuffers(1, &atlas->index_buffer);
+        atlas->index_buffer = new_buffer;
     }
-    glBufferSubData(GL_ARRAY_BUFFER, sizeof(msdfgl_index_entry) * font->_nglyphs,
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(msdfgl_index_entry) * atlas->nglyphs,
                     index_size, atlas_index);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -539,18 +575,18 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
     glBindTexture(GL_TEXTURE_BUFFER, 0);
 
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_BUFFER, font->index_texture);
-    glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, font->_index_buffer);
+    glBindTexture(GL_TEXTURE_BUFFER, atlas->index_texture);
+    glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, atlas->index_buffer);
     glBindTexture(GL_TEXTURE_BUFFER, 0);
 
     glActiveTexture(GL_TEXTURE0);
 
     /* Generate the atlas texture and bind it as the framebuffer. */
-    if (font->_texture_height == new_texture_height) {
+    if (atlas->texture_height == new_texture_height) {
         /* No need to extend the texture. */
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, font->_atlas_framebuffer);
-        glBindTexture(GL_TEXTURE_2D, font->atlas_texture);
-        glViewport(0, 0, font->texture_width, font->_texture_height);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, atlas->atlas_framebuffer);
+        glBindTexture(GL_TEXTURE_2D, atlas->atlas_texture);
+        glViewport(0, 0, atlas->texture_width, atlas->texture_height);
     } else {
         GLuint new_texture;
         GLuint new_framebuffer;
@@ -562,7 +598,7 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, font->texture_width,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, atlas->texture_width,
                      new_texture_height, 0, GL_RGBA, GL_FLOAT, NULL);
 
         if (glGetError() == GL_OUT_OF_MEMORY) {
@@ -575,34 +611,34 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
 
         glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                                new_texture, 0);
-        glViewport(0, 0, font->texture_width, new_texture_height);
+        glViewport(0, 0, atlas->texture_width, new_texture_height);
         glClearColor(0.0, 0.0, 0.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        if (font->_texture_height) {
+        if (atlas->texture_height) {
             /* Old texture had data -> copy. */
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, font->_atlas_framebuffer);
-            glBlitFramebuffer(0, 0, font->texture_width, font->_texture_height, 0, 0,
-                              font->texture_width, font->_texture_height,
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, atlas->atlas_framebuffer);
+            glBlitFramebuffer(0, 0, atlas->texture_width, atlas->texture_height, 0, 0,
+                              atlas->texture_width, atlas->texture_height,
                               GL_COLOR_BUFFER_BIT, GL_NEAREST);
             glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
         }
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-        font->_texture_height = new_texture_height;
-        glDeleteTextures(1, &font->atlas_texture);
-        font->atlas_texture = new_texture;
-        glDeleteFramebuffers(1, &font->_atlas_framebuffer);
-        font->_atlas_framebuffer = new_framebuffer;
+        atlas->texture_height = new_texture_height;
+        glDeleteTextures(1, &atlas->atlas_texture);
+        atlas->atlas_texture = new_texture;
+        glDeleteFramebuffers(1, &atlas->atlas_framebuffer);
+        atlas->atlas_framebuffer = new_framebuffer;
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GLfloat framebuffer_projection[4][4];
-    _msdfgl_ortho(0, (GLfloat)font->texture_width, 0, (GLfloat)font->_texture_height,
+    _msdfgl_ortho(0, (GLfloat)atlas->texture_width, 0, (GLfloat)atlas->texture_height,
                   -1.0, 1.0, framebuffer_projection);
-    _msdfgl_ortho(-(GLfloat)font->texture_width, (GLfloat)font->texture_width,
-                  -(GLfloat)font->_texture_height, (GLfloat)font->_texture_height, -1.0,
-                  1.0, font->atlas_projection);
+    _msdfgl_ortho(-(GLfloat)atlas->texture_width, (GLfloat)atlas->texture_width,
+                  -(GLfloat)atlas->texture_height, (GLfloat)atlas->texture_height, -1.0,
+                  1.0, atlas->projection);
 
     glUseProgram(ctx->gen_shader);
     glUniform1i(ctx->metadata_uniform, 0);
@@ -669,7 +705,7 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    font->_nglyphs += nrender;
+    atlas->nglyphs += nrender;
     retval = nrender;
 
 error:
@@ -752,15 +788,15 @@ void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
 
     /* Bind atlas texture and index buffer. */
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, font->atlas_texture);
+    glBindTexture(GL_TEXTURE_2D, font->atlas->atlas_texture);
     glUniform1i(font->context->_atlas_uniform, 0);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_BUFFER, font->index_texture);
+    glBindTexture(GL_TEXTURE_BUFFER, font->atlas->index_texture);
     glUniform1i(font->context->_index_uniform, 1);
 
     glUniformMatrix4fv(font->context->_font_atlas_projection_uniform, 1, GL_FALSE,
-                       (GLfloat *)font->atlas_projection);
+                       (GLfloat *)font->atlas->projection);
 
     glUniformMatrix4fv(font->context->window_projection_uniform, 1, GL_FALSE, projection);
     glUniform1f(font->context->_padding_uniform,
@@ -868,8 +904,8 @@ float msdfgl_vertical_advance(msdfgl_font_t font, float size) {
            font->face->units_per_EM;
 }
 
-GLuint _msdfgl_atlas_texture(msdfgl_font_t font) { return font->atlas_texture; }
-GLuint _msdfgl_index_texture(msdfgl_font_t font) { return font->index_texture; }
+GLuint _msdfgl_atlas_texture(msdfgl_font_t font) { return font->atlas->atlas_texture; }
+GLuint _msdfgl_index_texture(msdfgl_font_t font) { return font->atlas->index_texture; }
 
 void msdfgl_set_dpi(msdfgl_context_t context, float horizontal, float vertical) {
     context->dpi[0] = horizontal;
