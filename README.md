@@ -82,7 +82,7 @@ context = msdfgl_create_context(NULL);  /* NULL defaults to "330 core" */
 
 msdfgl_font_t font;
 font = msdfgl_load_font(context, "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
-                        4.0, 2.0, 0); /* range, scale, texture_width (defaults to max available) */
+                        4.0, 2.0, NULL); /* range, scale, atlas (NULL creates a new one) */
 
 /* Loads characters 0-128 onto the textures. This is where all the GPU cycles went. */
 msdfgl_generate_ascii(font);
@@ -107,6 +107,5 @@ The library includes two shaders:
 
 ## TODO:
 - Edge-coloring for teardrop with 1 or 2 segments
-- Support for cubic segments (doesn't seem to be too common in .ttf fonts)
+- Support for cubic segments (needed for OpenType fonts)
 - Unit testing
-- Maybe render several fonts to same buffer if there is space? What to do then if we run out of texture?
