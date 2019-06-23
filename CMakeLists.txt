@@ -100,35 +100,37 @@ add_custom_command(
   DEPENDS ${SHADERS})
 
 if (MSVC)
-  add_library(msdfgl src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c example/glad/src/glad.c ${SHADER_HEADER})
+  add_library(msdfglstatic src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c example/glad/src/glad.c ${SHADER_HEADER})
   add_library(msdfglshared SHARED src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c example/glad/src/glad.c ${SHADER_HEADER})
   set_target_properties(msdfglshared PROPERTIES OUTPUT_NAME msdfgl)
+  set_target_properties(msdfglstatic PROPERTIES OUTPUT_NAME msdfgl)
   target_compile_definitions(msdfglshared PRIVATE MSDFGL_EXPORTS=1)
 
 else()
-  add_library(msdfgl SHARED src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c ${SHADER_HEADER})
   add_library(msdfglstatic STATIC src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c ${SHADER_HEADER})
+  add_library(msdfglshared SHARED src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c ${SHADER_HEADER})
   set_target_properties(msdfglstatic PROPERTIES OUTPUT_NAME msdfgl)
+  set_target_properties(msdfglshared PROPERTIES OUTPUT_NAME msdfgl)
 endif()
 
 if (APPLE)
 
   # We make it the library user's responsibility to link against some OpenGL.
-  set_target_properties(msdfgl PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+  set_target_properties(msdfglshared PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
   add_definitions(-DGL_SILENCE_DEPRECATION)
 endif (APPLE)
 
 if (MSVC)
   #target_compile_options(msdfgl PRIVATE /W4 /WX)
 else()
-  target_compile_options(msdfgl PRIVATE -Wall -Wextra -pedantic -Werror -Wno-overlength-strings -Wno-unused-parameter -Wno-unused-variable)
+  target_compile_options(msdfglshared PRIVATE -Wall -Wextra -pedantic -Werror -Wno-overlength-strings -Wno-unused-parameter -Wno-unused-variable)
   target_compile_options(msdfglstatic PRIVATE -Wall -Wextra -pedantic -Werror -Wno-overlength-strings -Wno-unused-parameter -Wno-unused-variable)
 endif()
 
-target_include_directories (msdfgl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories (msdfglshared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories (msdfglstatic PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(msdfgl ${FREETYPE_LIBRARIES})
+target_link_libraries(msdfglshared ${FREETYPE_LIBRARIES})
 target_link_libraries(msdfglstatic ${FREETYPE_LIBRARIES})
 
 if (MSVC)
@@ -140,13 +142,13 @@ endif ()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/example/glad/include)
 add_executable(msdfgldemo EXCLUDE_FROM_ALL example/demo.c example/glad/src/glad.c)
 if (MSVC)
-  target_link_libraries(msdfgldemo msdfgl ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} ${GLFW3_LIB})
+  target_link_libraries(msdfgldemo msdfglstatic ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} ${GLFW3_LIB})
 else()
-  target_link_libraries(msdfgldemo msdfgl ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} glfw dl)
+  target_link_libraries(msdfgldemo msdfglshared ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} glfw dl)
 endif()
 
 
-install(TARGETS msdfgl msdfglstatic DESTINATION lib)
+install(TARGETS msdfglshared msdfglstatic DESTINATION lib)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/msdfgl.h DESTINATION include)
 
 

@@ -20,14 +20,18 @@
  */
 
 #ifdef _WIN32
+
+/* Disable DLL for now
 #ifdef MSDFGL_EXPORTS
 #define MSDFGL_EXPORT __declspec(dllexport)
 #else
 #define MSDFGL_EXPORT __declspec(dllimport)
 #endif
+*/
 
 #include <stdint.h>
 #include <windows.h>
+#define MSDFGL_EXPORT
 
 #else
 #define MSDFGL_EXPORT
