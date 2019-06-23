@@ -43,7 +43,7 @@
 #include <GL/gl.h>
 #endif
 
-#define MSDFGL_VERSION 0.2
+#define MSDFGL_VERSION "@MSDFGL_VERSION@"
 
 #ifdef __cplusplus
 extern "C" {
