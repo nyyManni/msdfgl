@@ -21,6 +21,11 @@ typedef SSIZE_T ssize_t;
 
 #include "_msdfgl_shaders.h" /* Auto-generated */
 
+/* Returns 1 if the code is a unicode control character. */
+static inline int _msdfgl_is_control(int32_t code) {
+    return (code <= 31) || (code >= 128 && code <= 159);
+}
+
 
 struct _msdfgl_atlas {
 
@@ -488,6 +493,15 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
         m->advance[0] = (float)font->face->glyph->metrics.horiAdvance;
         m->advance[1] = (float)font->face->glyph->metrics.vertAdvance;
 
+        /* If we are generating a range starting from 0, we reuse the NULL
+           character bitmap for all control characters.*/
+        if (start == 0 && index != 0 && _msdfgl_is_control(index)) {
+            atlas_index[i] = atlas_index[0];
+            while ((int)(atlas->nglyphs + i) > new_index_size)
+                new_index_size *= 2;
+            continue;
+        }
+
         buffer_width = font->face->glyph->metrics.width / SERIALIZER_SCALE + font->range;
         buffer_height =
             font->face->glyph->metrics.height / SERIALIZER_SCALE + font->range;
@@ -670,6 +684,9 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
     int meta_offset = 0;
     int point_offset = 0;
     for (int i = 0; i < nrender; ++i) {
+        if (start == 0 && i != 0 && _msdfgl_is_control(i))
+            continue;
+
         msdfgl_index_entry g = atlas_index[i];
         float w = g.size_x;
         float h = g.size_y;
