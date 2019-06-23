@@ -495,7 +495,7 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
 
         /* If we are generating a range starting from 0, we reuse the NULL
            character bitmap for all control characters.*/
-        if (start == 0 && index != 0 && _msdfgl_is_control(index)) {
+        if (range && start == 0 && index != 0 && _msdfgl_is_control(index)) {
             atlas_index[i] = atlas_index[0];
             while ((int)(atlas->nglyphs + i) > new_index_size)
                 new_index_size *= 2;
@@ -684,7 +684,7 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
     int meta_offset = 0;
     int point_offset = 0;
     for (int i = 0; i < nrender; ++i) {
-        if (start == 0 && i != 0 && _msdfgl_is_control(i))
+        if (range && start == 0 && i != 0 && _msdfgl_is_control(i))
             continue;
 
         msdfgl_index_entry g = atlas_index[i];
