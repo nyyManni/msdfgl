@@ -1,0 +1,11 @@
+add_library(glad STATIC src/glad.c)
+target_include_directories(glad PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+if(APPLE)
+  # We make it the library user's responsibility to link against some OpenGL.
+  set_target_properties(glad PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+endif()
+if(WIN32)
+    set(OpenGL_GL_PREFERENCE LEGACY)
+    find_package(OpenGL REQUIRED)
+    target_link_libraries(glad PUBLIC ${OPENGL_gl_LIBRARY})
+endif()
