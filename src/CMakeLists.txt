@@ -1,13 +1,23 @@
 configure_file(../include/msdfgl.h.in ${CMAKE_CURRENT_SOURCE_DIR}/../include/msdfgl.h @ONLY)
 
-file(GLOB_RECURSE MSDFGL_SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.glsl)
-foreach(MSDFGL_SHADER IN LISTS MSDFGL_SHADERS)
-    get_filename_component(${MSDFGL_SHADER}_NAME ${MSDFGL_SHADER} NAME_WE)
-    file(READ ${MSDFGL_SHADER} ${MSDFGL_SHADER}_CONTENTS)
-    set(COMBINED_SHADERS "${COMBINED_SHADERS}\n\nconst char * _${${MSDFGL_SHADER}_NAME} = R\"(${${MSDFGL_SHADER}_CONTENTS})\";")
+# Finds all .glsl shaders in our source directory.
+file(GLOB_RECURSE  _temp_msdfgl_shaders ${CMAKE_CURRENT_SOURCE_DIR}/*.glsl)
+# Creates a C-style string for each shader source.
+foreach(_temp_msdfgl_shader IN LISTS _temp_msdfgl_shaders)
+    # Gets the shader file name, without the extension.
+    get_filename_component(_temp_shader_name ${_temp_msdfgl_shader} NAME_WE)
+    # Reads the contents of the GLSL shader.
+    file(READ ${_temp_msdfgl_shader} _temp_shader_contents)
+    # Escapes characters so they can be contained in C style strings.
+    string(REPLACE "\"" "\\\"" _temp_shader_contents ${_temp_shader_contents})
+    string(REPLACE "\\" "\\\\" _temp_shader_contents ${_temp_shader_contents})
+    # Add quotes around each line in the shader.
+    string(REPLACE "\n" "\"\n\"" _temp_shader_contents ${_temp_shader_contents})
+    set(_temp_msdfgl_shaders_sources "${_temp_msdfgl_shaders_sources}\n\nconst char * _${_temp_shader_name} = \"${_temp_shader_contents}\";")
 endforeach()
+# Write a header guard around our GLSL shader sources.
 file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/_msdfgl_shaders.h "#ifndef _MSDFGL_SHADERS_H
-#define _MSDFGL_SHADERS_H${COMBINED_SHADERS}\n
+#define _MSDFGL_SHADERS_H${_temp_msdfgl_shaders_sources}\n
 #endif /* _MSDFGL_SHADERS_H */")
 
 find_package(Freetype 2.9.1 QUIET)
@@ -28,7 +38,7 @@ if(NOT FREETYPE_FOUND)
     endif()
 endif()
 
-add_library(msdfgl msdfgl.c msdfgl_serializer.c msdfgl_map.c)
+add_library(msdfgl ../include/msdfgl.h msdfgl.c msdfgl_serializer.c msdfgl_map.c)
 if(BUILD_SHARED_LIBS)
     target_compile_definitions(msdfgl PRIVATE MSDFGL_EXPORTS)
 else()
@@ -44,6 +54,5 @@ target_compile_features(msdfgl PUBLIC c_std_11)
 if(MSVC)
     #target_compile_options(msdfgl PRIVATE /W4 /WX)
 else()
-    target_compile_options(msdfgl PRIVATE -Wall -Wextra -pedantic -Werror -Wno-overlength-strings -Wno-unused-parameter -Wno-unused-variable)
     target_compile_options(msdfgl PRIVATE -Wall -Wextra -pedantic -Werror -Wno-overlength-strings -Wno-unused-parameter -Wno-unused-variable)
 endif()
