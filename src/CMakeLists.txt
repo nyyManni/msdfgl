@@ -22,6 +22,7 @@ file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/_msdfgl_shaders.h "#ifndef _MSDFGL_SHADER
 
 find_package(Freetype 2.9.1 QUIET)
 if(NOT FREETYPE_FOUND)
+    include(FetchContent)
     FetchContent_Declare(freetype
             URL https://download.savannah.gnu.org/releases/freetype/freetype-2.10.1.tar.gz
             URL_MD5 c50a3c9e5e62bdc938a6e1598a782947
@@ -48,7 +49,7 @@ target_include_directories(msdfgl PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
         $<$<BOOL:${FREETYPE_INCLUDE_DIRS}>:${FREETYPE_INCLUDE_DIRS}>
         )
-target_link_libraries(msdfgl PUBLIC glad ${FREETYPE_LIBRARIES})
+target_link_libraries(msdfgl PUBLIC glad ${FREETYPE_LIBRARIES} ${CMAKE_DL_LIBS})
 
 target_compile_features(msdfgl PUBLIC c_std_11)
 if(MSVC)
