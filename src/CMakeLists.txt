@@ -29,6 +29,11 @@ if(NOT FREETYPE_FOUND)
 endif()
 
 add_library(msdfgl msdfgl.c msdfgl_serializer.c msdfgl_map.c)
+if(BUILD_SHARED_LIBS)
+    target_compile_definitions(msdfgl PRIVATE MSDFGL_EXPORTS)
+else()
+    target_compile_definitions(msdfgl PUBLIC MSDFGL_STATIC_DEFINE)
+endif()
 target_include_directories(msdfgl PUBLIC 
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
         $<$<BOOL:${FREETYPE_INCLUDE_DIRS}>:${FREETYPE_INCLUDE_DIRS}>

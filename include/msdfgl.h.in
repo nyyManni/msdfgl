@@ -19,22 +19,24 @@
  * and a higher-level API handling font atlases and textures.
  */
 
-#ifdef _WIN32
-
-/* Disable DLL for now
-#ifdef MSDFGL_EXPORTS
-#define MSDFGL_EXPORT __declspec(dllexport)
+#if defined(MSDFGL_STATIC_DEFINE)
+#  define MSDFGL_EXPORT
+#  define MSDFGL_NO_EXPORT
 #else
-#define MSDFGL_EXPORT __declspec(dllimport)
+#  ifdef _MSC_VER
+#    ifdef MSDFGL_EXPORTS
+#      define MSDFGL_EXPORT __declspec(dllexport)
+#    else
+#      define MSDFGL_EXPORT __declspec(dllimport)
+#    endif
+#  else
+#    define MSDFGL_EXPORT __attribute__((visibility("default")))
+#  endif
 #endif
-*/
 
+#ifdef _WIN32
 #include <stdint.h>
 #include <windows.h>
-#define MSDFGL_EXPORT
-
-#else
-#define MSDFGL_EXPORT
 #endif
 
 #include <ft2build.h>
@@ -47,7 +49,7 @@
 #include <GL/gl.h>
 #endif
 
-#define MSDFGL_VERSION "@MSDFGL_VERSION@"
+#define MSDFGL_VERSION "@msdfgl_VERSION@"
 
 #ifdef __cplusplus
 extern "C" {

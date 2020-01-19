@@ -4,7 +4,9 @@ project(msdfgl VERSION 0.2.1 DESCRIPTION "OpenGL MSDF Generator and renderer" LA
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 option(BUILD_MSDFGL_EXAMPLE "Build MSDF example project" ON)
 
-add_subdirectory(third_party/glad)
+if(NOT TARGET glad)
+    add_subdirectory(third_party/glad)
+endif()
 add_subdirectory(src)
 if(BUILD_MSDFGL_EXAMPLE)
     add_subdirectory(example)
