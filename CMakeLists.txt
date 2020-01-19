@@ -8,6 +8,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
 
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 option(BUILD_MSDFGL_EXAMPLE "Build MSDF example project" ON)
+option(MSDFGL_INSTALL "Generate installation target" ON)
 
 if(NOT TARGET glad)
     add_subdirectory(third_party/glad)
