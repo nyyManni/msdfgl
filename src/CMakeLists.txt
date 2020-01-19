@@ -29,14 +29,16 @@ if(NOT FREETYPE_FOUND)
             )
     FetchContent_GetProperties(freetype)
     if(NOT freetype_POPULATED)
-        foreach(_freetype_option "CMAKE_DISABLE_FIND_PACKAGE_PNG" "CMAKE_DISABLE_FIND_PACKAGE_HarfBuzz"
-                "CMAKE_DISABLE_FIND_PACKAGE_BZip2" "CMAKE_DISABLE_FIND_PACKAGE_ZLIB" "CMAKE_DISABLE_FIND_PACKAGE_BROTLI"
+        foreach(_freetype_option "SKIP_INSTALL_HEADERS" "SKIP_INSTALL_LIBRARIES" 
+                "CMAKE_DISABLE_FIND_PACKAGE_PNG" "CMAKE_DISABLE_FIND_PACKAGE_HarfBuzz" "CMAKE_DISABLE_FIND_PACKAGE_BZip2"
+                "CMAKE_DISABLE_FIND_PACKAGE_ZLIB" "CMAKE_DISABLE_FIND_PACKAGE_BROTLI"
                 )
             set(${_freetype_option} TRUE CACHE INTERNAL "")
         endforeach()
         FetchContent_Populate(freetype)
         add_subdirectory(${freetype_SOURCE_DIR} ${freetype_BINARY_DIR})
     endif()
+	set(FREETYPE_LIBRARIES "freetype")
 endif()
 
 add_library(msdfgl ../include/msdfgl.h msdfgl.c msdfgl_serializer.c msdfgl_map.c)
@@ -58,14 +60,16 @@ else()
     target_compile_options(msdfgl PRIVATE -Wall -Wextra -pedantic -Werror -Wno-overlength-strings -Wno-unused-parameter -Wno-unused-variable)
 endif()
 
-install(TARGETS msdfgl
-        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-        )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/msdfgl.h
-        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-        )
+if(MSDFGL_INSTALL)
+    install(TARGETS msdfgl
+            LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+            ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+            RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+            )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/msdfgl.h
+            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+            )
+endif()
 
 # TODO: Modernize CPack.
 if(WIN32)
