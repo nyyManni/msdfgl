@@ -1,4 +1,4 @@
-configure_file(../include/msdfgl.h.in ${CMAKE_CURRENT_SOURCE_DIR}/../include/msdfgl.h @ONLY)
+configure_file(../include/msdfgl.h.in msdfgl.h @ONLY)
 
 # Finds all .glsl shaders in our source directory.
 file(GLOB_RECURSE  _temp_msdfgl_shaders ${CMAKE_CURRENT_SOURCE_DIR}/*.glsl)
@@ -16,7 +16,7 @@ foreach(_temp_msdfgl_shader IN LISTS _temp_msdfgl_shaders)
     set(_temp_msdfgl_shaders_sources "${_temp_msdfgl_shaders_sources}\n\nconst char * _${_temp_shader_name} = \"${_temp_shader_contents}\";")
 endforeach()
 # Write a header guard around our GLSL shader sources.
-file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/_msdfgl_shaders.h "#ifndef _MSDFGL_SHADERS_H
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/_msdfgl_shaders.h "#ifndef _MSDFGL_SHADERS_H
 #define _MSDFGL_SHADERS_H${_temp_msdfgl_shaders_sources}\n
 #endif /* _MSDFGL_SHADERS_H */")
 
@@ -46,8 +46,8 @@ else()
     target_compile_definitions(msdfgl PUBLIC MSDFGL_STATIC_DEFINE)
 endif()
 target_include_directories(msdfgl PUBLIC 
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
-        $<$<BOOL:${FREETYPE_INCLUDE_DIRS}>:${FREETYPE_INCLUDE_DIRS}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+        ${FREETYPE_INCLUDE_DIRS}
         )
 target_link_libraries(msdfgl PUBLIC glad ${FREETYPE_LIBRARIES} ${CMAKE_DL_LIBS})
 
@@ -56,4 +56,77 @@ if(MSVC)
     #target_compile_options(msdfgl PRIVATE /W4 /WX)
 else()
     target_compile_options(msdfgl PRIVATE -Wall -Wextra -pedantic -Werror -Wno-overlength-strings -Wno-unused-parameter -Wno-unused-variable)
+endif()
+
+install(TARGETS msdfgl
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        )
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/msdfgl.h
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        )
+
+# TODO: Modernize CPack.
+if(WIN32)
+    set(CPACK_PACKAGE_NAME "msdfgl")
+    set(CPACK_PACKAGE_VENDOR "Henrik Nyman")
+    
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${MSDFGL_DESCRIPTION}")
+    set(CPACK_PACKAGE_VENDOR "Henrik Nyman")
+    set(CPACK_PACKAGE_CONTACT "h@nyymanni.com")
+    set(CPACK_PACKAGE_VERSION_MAJOR "${MAJOR_VERSION}")
+    set(CPACK_PACKAGE_VERSION_MINOR "${MINOR_VERSION}")
+    
+    set(CPACK_PACKAGE_INSTALL_DIRECTORY "msdfgl")
+    
+    set(CPACK_COMPONENTS_ALL libraries headers)
+    set(CPACK_COMPONENT_LIBRARIES_DISPLAY_NAME "Libraries")
+    set(CPACK_COMPONENT_HEADERS_DISPLAY_NAME "C Headers")
+    
+    set(CPACK_COMPONENT_LIBRARIES_DESCRIPTION "MSDFGL static library")
+    set(CPACK_COMPONENT_HEADERS_DESCRIPTION "C/C++ header files for use with MSDFGL")
+    
+    set(CPACK_COMPONENT_HEADERS_DEPENDS libraries)
+    
+    set(CPACK_COMPONENT_LIBRARIES_GROUP "")
+    set(CPACK_COMPONENT_HEADERS_GROUP "Development")
+    
+    set(CPACK_COMPONENT_GROUP_DEVELOPMENT_DESCRIPTION "MSDFGL library")
+    
+    set(CPACK_ALL_INSTALL_TYPES Full)
+    set(CPACK_COMPONENT_LIBRARIES_INSTALL_TYPES Full)
+    set(CPACK_COMPONENT_HEADERS_INSTALL_TYPES Full)
+   
+    include(CPack)
+else()
+    if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
+        include(InstallRequiredSystemLibraries)
+        
+        set(CPACK_SET_DESTDIR "on")
+        set(CPACK_PACKAGING_INSTALL_PREFIX "/tmp")
+        set(CPACK_GENERATOR "DEB")
+        
+        set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${MSDFGL_DESCRIPTION}")
+        set(CPACK_PACKAGE_VENDOR "Henrik Nyman")
+        set(CPACK_PACKAGE_CONTACT "h@nyymanni.com")
+        set(CPACK_PACKAGE_VERSION_MAJOR "${msdfgl_MAJOR_VERSION}")
+        set(CPACK_PACKAGE_VERSION_MINOR "${msdfgl_MINOR_VERSION}")
+        set(CPACK_PACKAGE_VERSION_PATCH "${msdfgl_PATCH_VERSION}")
+        set(CPACK_PACKAGE_NAME "lib${CMAKE_PROJECT_NAME}-dev")
+        set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}_${msdfgl_MAJOR_VERSION}.${msdfgl_MINOR_VERSION}-${CPACK_PACKAGE_VERSION_PATCH}")
+        set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}_${msdfgl_MAJOR_VERSION}.${msdfgl_MINOR_VERSION}-${CPACK_PACKAGE_VERSION_PATCH}")
+        
+        set(CPACK_DEBIAN_PACKAGE_DEPENDS "")
+        set(CPACK_DEBIAN_PACKAGE_SUGGESTS "")
+        
+        set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+        set(CPACK_DEBIAN_PACKAGE_VERSION "${msdfgl_MAJOR_VERSION}.${msdfgl_MINOR_VERSION}-${CPACK_PACKAGE_VERSION_PATCH}")
+        set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
+        set(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
+        
+        set(CPACK_COMPONENTS_ALL Libraries ApplicationData)
+
+        include(CPack)
+    endif()
 endif()

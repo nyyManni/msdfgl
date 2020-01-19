@@ -16,7 +16,4 @@ desktop.ini
 .idea/
 build/
 out/
-
-include/msdfgl.h
-src/_msdfgl_shaders.h
 CMakeSettings.json
