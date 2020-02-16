@@ -187,7 +187,11 @@ enum msdfgl_printf_flags {
     MSDFGL_KERNING = 0x01,
 
     /**
-     * Render wide character arrays. Give the fmt-argment as wchar_t *.
+     * Render wide character arrays. Give the fmt-argment as wchar_t * in UTF-32.
+     *
+     * NOTE: due to limitations in wchar string operations there is an upper
+     *       limit of 255 characters that can be printed in one call. If more
+     *       characters are to be printed at once use UTF-8 instead.
      */
     MSDFGL_WCHAR = 0x02,
 
@@ -195,6 +199,15 @@ enum msdfgl_printf_flags {
      * Draw text vertically instead of horizontally.
      */
     MSDFGL_VERTICAL = 0x04,
+
+    /**
+     * Parse the text as an UTF-8 string.
+     *
+     * NOTE: msdfgl does not validate the string in any way. The caller is
+     *       responsible for validating the untrusted string before passing it
+     *       to msdfgl.
+     */
+    MSDFGL_UTF8 = 0x08,
 };
 
 /**

@@ -848,6 +848,30 @@ void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
     glDeleteVertexArrays(1, &vao);
 }
 
+uint32_t parse_utf8(uint8_t *buf, size_t *len) {
+  (*len)++;
+
+  uint8_t c = buf[0];
+  uint8_t x = buf[0];
+
+  /* Calculate the amount of leasing ones */
+  int leading_ones = 0;
+  while (!(~x & (1 << (CHAR_BIT - 1)))) {x = (x << 1); leading_ones++;}
+
+  /* Clear the leading ones. */
+  c <<= leading_ones;
+  c >>= leading_ones;
+
+  /* Process the remaining bytes. */
+  uint32_t C = c;
+  for (int i = 0; i < leading_ones - 1; i++) {
+      C <<= 6;
+      C |= buf[i + 1] & 0x3f;
+      (*len)++;
+  }
+  return C;
+}
+
 float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t color,
                     GLfloat *projection, enum msdfgl_printf_flags flags, const void *fmt,
                     ...) {
@@ -879,14 +903,19 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
         return x;
     }
 
-    for (size_t i = 0; i < bufsize; ++i) {
+    size_t buf_idx = 0;
+    for (size_t i = 0; buf_idx < bufsize; ++i) {
         glyphs[i].x = x;
         glyphs[i].y = y;
         glyphs[i].color = color;
+
         if (flags & MSDFGL_WCHAR)
-            glyphs[i].key = (int32_t)((wchar_t *)s)[i];
+            glyphs[i].key = (int32_t)((wchar_t *)s)[buf_idx++];
+        else if (flags & MSDFGL_UTF8)
+            glyphs[i].key = parse_utf8(&((uint8_t *)s)[buf_idx], &buf_idx);
         else
             glyphs[i].key = (int32_t)((char *)s)[i];
+
         glyphs[i].size = (GLfloat)size;
         glyphs[i].offset = 0;
         glyphs[i].skew = 0;
