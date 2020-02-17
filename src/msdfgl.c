@@ -157,6 +157,8 @@ struct _msdfgl_context {
 
     GLuint bbox_vao;
     GLuint bbox_vbo;
+
+    int (*missing_glyph_cb)(msdfgl_font_t, int32_t);
 };
 
 GLfloat _MAT4_ZERO_INIT[4][4] = {{0.0f, 0.0f, 0.0f, 0.0f},
@@ -247,6 +249,8 @@ msdfgl_context_t msdfgl_create_context(const char *version) {
     glGetProgramiv(ctx->gen_shader, GL_LINK_STATUS, &status);
     if (!status)
         return NULL;
+
+    ctx->missing_glyph_cb = NULL;
 
     ctx->_atlas_projection_uniform = glGetUniformLocation(ctx->gen_shader, "projection");
     ctx->_texture_offset_uniform = glGetUniformLocation(ctx->gen_shader, "offset");
@@ -667,7 +671,8 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
     glUniform1i(ctx->_point_offset_uniform, 0);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        printf("framebuffer incomplete: %x\n", glCheckFramebufferStatus(GL_FRAMEBUFFER));
+        fprintf(stderr, "msdfgl: framebuffer incomplete: %x\n",
+                glCheckFramebufferStatus(GL_FRAMEBUFFER));
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_BUFFER, font->_meta_input_texture);
@@ -922,8 +927,20 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
         glyphs[i].strength = 0.5;
 
         msdfgl_map_item_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
-        if (!e)
-            continue;
+        if (!e) {
+            if (font->context->missing_glyph_cb) {
+                if (!font->context->missing_glyph_cb(font, glyphs[i].key))
+                    continue;
+
+                e = msdfgl_map_get(&font->character_index, glyphs[i].key);
+                if (!e)
+                    continue;
+            } else {
+                fprintf(stderr, "msdfgl: missing glyph: %i\n", glyphs[i].key);
+                continue;
+            }
+        }
+
         FT_Vector kerning = {0, 0};
 
         if (flags & MSDFGL_KERNING && i < bufsize - 1 && FT_HAS_KERNING(font->face))
@@ -943,6 +960,10 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
     free(s);
 
     return flags & MSDFGL_VERTICAL ? y : x;
+}
+
+void msdfgl_set_missing_glyph_callback(msdfgl_context_t ctx, int (*cb)(msdfgl_font_t, int32_t)) {
+    ctx->missing_glyph_cb = cb;
 }
 
 float msdfgl_vertical_advance(msdfgl_font_t font, float size) {

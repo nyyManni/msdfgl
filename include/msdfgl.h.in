@@ -231,6 +231,22 @@ MSDFGL_EXPORT float msdfgl_printf(float x, float y, msdfgl_font_t font, float si
                                   int32_t color, GLfloat *projection,
                                   enum msdfgl_printf_flags flags, const void *fmt, ...);
 
+
+/**
+ * Handle undefined glyphs during `msdfgl_printf`. The callback gets called with
+ * the active font as the first argument and UTF-32 codepoint of the undefined
+ * character as the second argument. After the function returns `msdfgl_printf`
+ * will attempt the lookup of the character again, if the callback returned
+ * a non-zero value.
+ *
+ * If there is no context-switch or other maintenance required before/after
+ * generation, auto-generating glyphs can be acquired simply by calling:
+ *
+ * `msdfg_set_missing_glyph_callback(<context>, msdfgl_generate_glyph)`
+ */
+MSDFGL_EXPORT void msdfgl_set_missing_glyph_callback(msdfgl_context_t,
+                                                     int (*)(msdfgl_font_t, int32_t));
+
 /**
  * Set the DPI for the current session. Following draw calls will use the new DPI.
  * The DPI value is a vector, which allows for rendering text with a monitor which
