@@ -537,7 +537,7 @@ int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t 
         if (new_texture_height > font->context->_max_texture_size) {
             goto error;
         }
-        while ((int)(atlas->nglyphs + i) > new_index_size) {
+        while ((int)(atlas->nglyphs + i) >= new_index_size) {
             new_index_size *= 2;
         }
     }
