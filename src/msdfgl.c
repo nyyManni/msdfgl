@@ -919,7 +919,7 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
         else if (flags & MSDFGL_UTF8)
             glyphs[i].key = parse_utf8(&((uint8_t *)s)[buf_idx], &buf_idx);
         else
-            glyphs[i].key = (int32_t)((char *)s)[i];
+            glyphs[i].key = (int32_t)((char *)s)[buf_idx++];
 
         glyphs[i].size = (GLfloat)size;
         glyphs[i].offset = 0;
