@@ -158,7 +158,8 @@ struct _msdfgl_context {
     GLuint bbox_vao;
     GLuint bbox_vbo;
 
-    int (*missing_glyph_cb)(msdfgl_font_t, int32_t);
+    int (*missing_glyph_cb)(msdfgl_font_t, int32_t, void *);
+    void *missing_glyph_user_data;
 };
 
 GLfloat _MAT4_ZERO_INIT[4][4] = {{0.0f, 0.0f, 0.0f, 0.0f},
@@ -929,7 +930,8 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
         msdfgl_map_item_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
         if (!e) {
             if (font->context->missing_glyph_cb) {
-                if (!font->context->missing_glyph_cb(font, glyphs[i].key))
+                if (!font->context->missing_glyph_cb(font, glyphs[i].key,
+                                                     font->context->missing_glyph_user_data))
                     continue;
 
                 e = msdfgl_map_get(&font->character_index, glyphs[i].key);
@@ -962,8 +964,11 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
     return flags & MSDFGL_VERTICAL ? y : x;
 }
 
-void msdfgl_set_missing_glyph_callback(msdfgl_context_t ctx, int (*cb)(msdfgl_font_t, int32_t)) {
+void msdfgl_set_missing_glyph_callback(msdfgl_context_t ctx,
+                                       int (*cb)(msdfgl_font_t, int32_t, void *),
+                                       void *data) {
     ctx->missing_glyph_cb = cb;
+    ctx->missing_glyph_user_data = data;
 }
 
 float msdfgl_vertical_advance(msdfgl_font_t font, float size) {

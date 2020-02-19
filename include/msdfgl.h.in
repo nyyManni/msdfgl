@@ -242,10 +242,13 @@ MSDFGL_EXPORT float msdfgl_printf(float x, float y, msdfgl_font_t font, float si
  * If there is no context-switch or other maintenance required before/after
  * generation, auto-generating glyphs can be acquired simply by calling:
  *
- * `msdfgl_set_missing_glyph_callback(<context>, msdfgl_generate_glyph)`
+ * `msdfgl_set_missing_glyph_callback(<context>, msdfgl_generate_glyph, <user data>)`
+ *
+ * <user data> is the same pointer which was given when setting up the callback.
  */
 MSDFGL_EXPORT void msdfgl_set_missing_glyph_callback(msdfgl_context_t,
-                                                     int (*)(msdfgl_font_t, int32_t));
+                                                     int (*)(msdfgl_font_t, int32_t, void *),
+                                                     void *);
 
 /**
  * Set the DPI for the current session. Following draw calls will use the new DPI.
