@@ -235,7 +235,6 @@ msdfgl_context_t msdfgl_create_context(const char *version) {
     if (!compile_shader(_msdf_fragment, GL_FRAGMENT_SHADER, &fragment_shader, version))
         return NULL;
 
-    ctx->gen_shader = glCreateProgram();
     if (!(ctx->gen_shader = glCreateProgram()))
         return NULL;
 
