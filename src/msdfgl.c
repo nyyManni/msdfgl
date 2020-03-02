@@ -824,8 +824,7 @@ void msdfgl_render(msdfgl_font_t font, msdfgl_glyph_t *glyphs, int n,
     glUniform1f(font->context->_padding_uniform,
                 (GLfloat)(font->range / 2.0 * SERIALIZER_SCALE));
     glUniform1f(font->context->_units_per_em_uniform, (GLfloat)font->face->units_per_EM);
-    glUniform2f(font->context->_dpi_uniform, font->context->dpi[0],
-                font->context->dpi[1]);
+    glUniform2fv(font->context->_dpi_uniform, 1, font->context->dpi);
 
     /* Render the glyphs. */
     glDrawArrays(GL_POINTS, 0, n);
