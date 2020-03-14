@@ -59,8 +59,7 @@ In `CMakeLists.txt` modify variables `FREETYPE_DIR` and `GLFW3_LIB` to point to 
 ```sh
 mkdir build
 cd build
-cmake -G "NMake Makefiles" ..
-nmake
+cmake -G "Visual Studio 16 2019" ..
 ```
 
 ## Usage:
