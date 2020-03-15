@@ -75,10 +75,12 @@ else ()  # Linux and macOS
 OUTPUT=\$1
 shift
 
-echo '#ifndef _MSDF_SHADERS_H\\n#define _MSDF_SHADERS_H' >$OUTPUT
+echo '#ifndef _MSDF_SHADERS_H' >\$OUTPUT
+echo '#define _MSDF_SHADERS_H' >>\$OUTPUT
 for header; do
         fname=\${header##*/};
-        echo '\\nconst char * _'\${fname\%\%.glsl}' =' >>\$OUTPUT
+        echo '' >>\$OUTPUT
+        echo 'const char * _'\${fname\%\%.glsl}' =' >>\$OUTPUT
         sed -e 's/\\\\/\\\\\\\\/' \\
             -e 's/^\\(.*\\)\$/\"\\1\\\\n\"/' \\
             \$header >>\$OUTPUT; \\
