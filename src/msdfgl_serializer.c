@@ -146,6 +146,13 @@ static int __add_linear(const FT_Vector *to, void *user) {
     struct __glyph_data_ctx *ctx = (struct __glyph_data_ctx *)user;
     ctx->point_buffer[ctx->point_index++] = to->x / SERIALIZER_SCALE;
     ctx->point_buffer[ctx->point_index++] = to->y / SERIALIZER_SCALE;
+    if (ctx->point_buffer[ctx->point_index - 2] == ctx->point_buffer[ctx->point_index - 4] &&
+        ctx->point_buffer[ctx->point_index - 1] == ctx->point_buffer[ctx->point_index - 3]) {
+        /* Some glyphs contain "bugs", where a quad segment is actually a linear
+         segment with a double point. Treat it as a linear segment. */
+        ctx->point_index -= 2;
+        return 0;
+    }
 
     ctx->meta_buffer[ctx->meta_index++] = 0; /* Set color to 0 */
     ctx->meta_buffer[ctx->meta_index++] = 2;
@@ -156,11 +163,28 @@ static int __add_quad(const FT_Vector *control, const FT_Vector *to, void *user)
     struct __glyph_data_ctx *ctx = (struct __glyph_data_ctx *)user;
     ctx->point_buffer[ctx->point_index++] = control->x / SERIALIZER_SCALE;
     ctx->point_buffer[ctx->point_index++] = control->y / SERIALIZER_SCALE;
+    bool _is_linear = false;
+    if (ctx->point_buffer[ctx->point_index - 2] == ctx->point_buffer[ctx->point_index - 4]
+        && ctx->point_buffer[ctx->point_index - 1] == ctx->point_buffer[ctx->point_index - 3]) {
+        /* Some glyphs contain "bugs", where a quad segment is actually a linear
+         segment with a double point. Treat it as a linear segment. */
+        _is_linear = true;
+        ctx->point_index -= 2;
+    }
+
+
     ctx->point_buffer[ctx->point_index++] = to->x / SERIALIZER_SCALE;
     ctx->point_buffer[ctx->point_index++] = to->y / SERIALIZER_SCALE;
 
+    if (!_is_linear && ctx->point_buffer[ctx->point_index - 2] == ctx->point_buffer[ctx->point_index - 4]
+        && ctx->point_buffer[ctx->point_index - 1] == ctx->point_buffer[ctx->point_index - 3]) {
+        /* Some glyphs contain "bugs", where a quad segment is actually a linear
+         segment with a double point. Treat it as a linear segment. */
+        _is_linear = true;
+        ctx->point_index -= 2;
+    }
     ctx->meta_buffer[ctx->meta_index++] = 0; /* Set color to 0 */
-    ctx->meta_buffer[ctx->meta_index++] = 3;
+    ctx->meta_buffer[ctx->meta_index++] = _is_linear ? 2 : 3;
     ctx->meta_buffer[ctx->nsegments_index]++;
     return 0;
 }
