@@ -259,15 +259,12 @@ void set_contour_edge(int winding, vec2 point) {
     if (winding > 0 && median(d) >= 0.0)
         merge_multi_segment(IDX_INNER, IDX_CURR);
     if (winding < 0 && median(d) <= 0.0)
-        merge_multi_segment(IDX_INNER, IDX_CURR);
+        merge_multi_segment(IDX_OUTER, IDX_CURR);
 
     int i = winding < 0 ? IDX_MAX_INNER : IDX_MAX_OUTER;
 
-    if (median(d) > median(ws.maximums[i]))
-        ws.maximums[i] = d;
-
-    if (abs(median(d)) < abs(median(ws.min_absolute)))
-        ws.min_absolute = d;
+    ws.maximums[i] = (median(d) > median(ws.maximums[i])) ? d : ws.maximums[i];
+    ws.min_absolute = (abs(median(d)) < abs(median(ws.min_absolute))) ? d : ws.min_absolute;
 }
 
 vec2 segment_direction(int points, int npoints, float param) {
