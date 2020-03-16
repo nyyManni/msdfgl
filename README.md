@@ -90,7 +90,7 @@ font = msdfgl_load_font(context, "/usr/share/fonts/truetype/dejavu/DejaVuSansMon
 msdfgl_generate_ascii(font);
 
 /* Enable auto-generating undefined glyphs as they are encountered for the first time. */
-msdfgl_set_missing_glyph_callback(context, msdfgl_generate_glyph);
+msdfgl_set_missing_glyph_callback(context, msdfgl_generate_glyph, NULL);
 
 /*            x    y           size  color       4x4 projection-matrix  flags */
 msdfgl_printf(0.0, 20.0, font, 18.0, 0xffffffff, (GLfloat *)projection, MSDFGL_KERNING,

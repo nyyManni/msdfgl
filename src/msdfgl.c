@@ -876,6 +876,82 @@ uint32_t parse_utf8(uint8_t *buf, size_t *len) {
   return C;
 }
 
+msdfgl_map_item_t *msdfgl_map_get_or_add(msdfgl_font_t font, int32_t key) {
+    msdfgl_map_item_t *e = msdfgl_map_get(&font->character_index, key);
+    if (!e) {
+        if (font->context->missing_glyph_cb) {
+            if (!font->context->missing_glyph_cb(font, key,
+                                                    font->context->missing_glyph_user_data))
+                return NULL;
+
+            e = msdfgl_map_get(&font->character_index, key);
+            if (!e)
+                return NULL;
+        } else {
+            fprintf(stderr, "msdfgl: missing glyph: %i\n", key);
+            return NULL;
+        }
+    }
+    return e;
+}
+
+void msdfgl_geometry(float *x, float *y, msdfgl_font_t font, float size,
+                     enum msdfgl_printf_flags flags, const void *fmt, ...) {
+    va_list argp;
+    va_start(argp, fmt);
+
+    size_t bufsize;
+    if (flags & MSDFGL_WCHAR) {
+        fprintf(stderr, "msdfgl: MSDfGL_WHCAR is deprecated, use MSDFGL_UTF8 instead\n");
+        static wchar_t arr[255];
+        bufsize = vswprintf(arr, 255, (const wchar_t *)fmt, argp);
+    } else {
+        bufsize = vsnprintf(NULL, 0, (const char *)fmt, argp);
+    }
+    va_end(argp);
+
+    void *s = calloc(bufsize + 1, flags & MSDFGL_WCHAR ? sizeof(wchar_t) : sizeof(char));
+    if (!s)
+        return;
+    va_start(argp, fmt);
+    if (flags & MSDFGL_WCHAR)
+        vswprintf((wchar_t *)s, bufsize + 1, (const wchar_t *)fmt, argp);
+    else
+        vsnprintf((char *)s, bufsize + 1, (const char *)fmt, argp);
+    va_end(argp);
+
+    size_t buf_idx = 0;
+    GLint prev_key = -1;
+    for (size_t i = 0; buf_idx < bufsize; ++i) {
+        GLint key;
+
+        if (flags & MSDFGL_WCHAR)
+            key = (int32_t)((wchar_t *)s)[buf_idx++];
+        else if (flags & MSDFGL_UTF8)
+            key = parse_utf8(&((uint8_t *)s)[buf_idx], &buf_idx);
+        else
+            key = (int32_t)((char *)s)[buf_idx++];
+
+        msdfgl_map_item_t *e = msdfgl_map_get_or_add(font, key);
+
+        FT_Vector kerning = {0, 0};
+
+        if (flags & MSDFGL_KERNING && (prev_key != -1) && FT_HAS_KERNING(font->face))
+            FT_Get_Kerning(font->face, FT_Get_Char_Index(font->face, prev_key),
+                           FT_Get_Char_Index(font->face, key),
+                           FT_KERNING_UNSCALED, &kerning);
+
+        if (flags & MSDFGL_VERTICAL)
+            *y += (e->advance[1] + kerning.y) * (size * font->context->dpi[1] / 72.0f) /
+                font->face->units_per_EM;
+        else
+            *x += (e->advance[0] + kerning.x) * (size * font->context->dpi[0] / 72.0f) /
+                font->face->units_per_EM;
+        prev_key = key;
+    }
+    free(s);
+}
+
 float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t color,
                     GLfloat *projection, enum msdfgl_printf_flags flags, const void *fmt,
                     ...) {
@@ -884,6 +960,7 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
 
     size_t bufsize;
     if (flags & MSDFGL_WCHAR) {
+        fprintf(stderr, "msdfgl: MSDfGL_WHCAR is deprecated, use MSDFGL_UTF8 instead\n");
         static wchar_t arr[255];
         bufsize = vswprintf(arr, 255, (const wchar_t *)fmt, argp);
     } else {
@@ -925,28 +1002,18 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
         glyphs[i].skew = 0;
         glyphs[i].strength = 0.5;
 
-        msdfgl_map_item_t *e = msdfgl_map_get(&font->character_index, glyphs[i].key);
-        if (!e) {
-            if (font->context->missing_glyph_cb) {
-                if (!font->context->missing_glyph_cb(font, glyphs[i].key,
-                                                     font->context->missing_glyph_user_data))
-                    continue;
-
-                e = msdfgl_map_get(&font->character_index, glyphs[i].key);
-                if (!e)
-                    continue;
-            } else {
-                fprintf(stderr, "msdfgl: missing glyph: %i\n", glyphs[i].key);
-                continue;
-            }
-        }
+        msdfgl_map_item_t *e = msdfgl_map_get_or_add(font, glyphs[i].key);
 
         FT_Vector kerning = {0, 0};
-
-        if (flags & MSDFGL_KERNING && i < bufsize - 1 && FT_HAS_KERNING(font->face))
-            FT_Get_Kerning(font->face, FT_Get_Char_Index(font->face, glyphs[i].key),
-                           FT_Get_Char_Index(font->face, glyphs[i + 1].key),
+        if (flags & MSDFGL_KERNING && i && FT_HAS_KERNING(font->face)) {
+            FT_Get_Kerning(font->face, FT_Get_Char_Index(font->face, glyphs[i - 1].key),
+                           FT_Get_Char_Index(font->face, glyphs[i].key),
                            FT_KERNING_UNSCALED, &kerning);
+            if (flags & MSDFGL_VERTICAL)
+                glyphs[i - 1].y += kerning.y * (size * font->context->dpi[1] / 72.0f) / font->face->units_per_EM;
+            else
+                glyphs[i - 1].x += kerning.x * (size * font->context->dpi[0] / 72.0f) / font->face->units_per_EM;
+        }
 
         if (flags & MSDFGL_VERTICAL)
             y += (e->advance[1] + kerning.y) * (size * font->context->dpi[1] / 72.0f) /

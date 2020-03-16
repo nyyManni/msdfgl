@@ -233,6 +233,31 @@ MSDFGL_EXPORT float msdfgl_printf(float x, float y, msdfgl_font_t font, float si
 
 
 /**
+ * Calculate the width or height of the text.
+ *
+ * x - pointer to x coordinate of the starting glyph will be incremented by
+ *     the call.
+ * y - pointer to y coordinate of the starting glyph will be incremented by
+ *     the call (note that this points to the origin of the glyph, which is
+ *     usually at bottom left).
+ * font - font to use for rendering.
+ * size - font size in points (fractional sizes are allowed).
+ * flags - drawing options, see `enum msdfgl_printf_flags`
+ * fmt - char * (or wchar_t *) format string.
+ * ... - substitution variables for the format string.
+ *
+ * Does not render the text - just calculates how much the cursor would move if
+ * the text were to be rendered. This does not mean the call would not hit GPU,
+ * as `msdfgl_geometry` will trigger missing_glyph_callback if one is set.
+ *
+ * Also note, that only the coordinate to the direction of text flow is updated.
+ * E.g. with MSDGL_VERTICAL set only the y-coordinate is moved - and vice versa.
+ */
+MSDFGL_EXPORT void msdfgl_geometry(float *x, float *y, msdfgl_font_t font, float size,
+                                   enum msdfgl_printf_flags flags, const void *fmt, ...);
+
+
+/**
  * Handle undefined glyphs during `msdfgl_printf`. The callback gets called with
  * the active font as the first argument and UTF-32 codepoint of the undefined
  * character as the second argument. After the function returns `msdfgl_printf`
