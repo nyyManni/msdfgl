@@ -123,10 +123,8 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Failed to load font!\n");
         return -1;
     }
-    if (msdfgl_generate_ascii(font) < 0) {
-        fprintf(stderr, "Failed to generate atlas!\n");
-        return -1;
-    }
+    msdfgl_set_missing_glyph_callback(ctx, msdfgl_generate_glyph, NULL);
+
     _msdfgl_ortho(0.0, SCR_WIDTH, SCR_HEIGHT, 0.0, -1.0, 1.0, proj);
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -148,8 +146,12 @@ int main(int argc, char *argv[]) {
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        msdfgl_printf(10.0, 200.0, font, 128.0, 0xffffffff, (GLfloat *)proj,
-                      MSDFGL_KERNING, argv[2]);
+        float y = 200.0;
+        for (int i = 2; i < argc; i++) {
+            msdfgl_printf(10.0, y, font, 64.0, 0xffffffff, (GLfloat *)proj,
+                          MSDFGL_UTF8 | MSDFGL_KERNING, argv[i]);
+            y += msdfgl_vertical_advance(font, 64.0) / 2.0;
+        }
 
         glUseProgram(shaderProgram);
 
