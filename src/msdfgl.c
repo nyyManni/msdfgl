@@ -749,7 +749,7 @@ int msdfgl_generate_glyphs(msdfgl_font_t font, int32_t start, int32_t end) {
     return _msdfgl_generate_glyphs_internal(font, start, end + 1, 1, NULL, 0);
 }
 
-int msdfgl_generate_glyph(msdfgl_font_t font, int32_t character) {
+int msdfgl_generate_glyph(msdfgl_font_t font, int32_t character, void *_user) {
     return _msdfgl_generate_glyphs_internal(font, character, character + 1, 1, NULL, 0);
 }
 

@@ -150,8 +150,10 @@ MSDFGL_EXPORT void msdfgl_destroy_font(msdfgl_font_t font);
 /**
  * Render a single glyph onto the MSDF atlas. Intented use case is to generate
  * the bitmaps on-demand as the characters are appearing.
+ * Parameter _user is defined just to make this function compatible as a missing
+ * glyph callback. It will not be used by the function.
  */
-MSDFGL_EXPORT int msdfgl_generate_glyph(msdfgl_font_t font, int32_t char_code);
+MSDFGL_EXPORT int msdfgl_generate_glyph(msdfgl_font_t font, int32_t char_code, void *_user);
 
 /**
  * Render a range of glyphs onto the MSDF atlas. The range is inclusive. Intended
