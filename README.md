@@ -111,6 +111,7 @@ The library includes two shaders:
 
 
 ## TODO:
+- Detecting incorrect winding of a glyph and inverting the texture to compensate
 - Edge-coloring for teardrop with 1 or 2 segments
 - Support for cubic segments (needed for OpenType fonts)
 - Unit testing

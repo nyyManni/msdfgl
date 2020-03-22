@@ -118,9 +118,10 @@ struct __glyph_data_ctx {
 
 static int __add_contour(const FT_Vector *to, void *user) {
     struct __glyph_data_ctx *ctx = (struct __glyph_data_ctx *)user;
-
-    ctx->point_buffer[ctx->point_index++] = to->x / SERIALIZER_SCALE;
-    ctx->point_buffer[ctx->point_index++] = to->y / SERIALIZER_SCALE;
+    vec2 *segment = (vec2 *)&ctx->point_buffer[ctx->point_index];
+    segment[0].x = to->x / SERIALIZER_SCALE;
+    segment[0].y = to->y / SERIALIZER_SCALE;
+    ctx->point_index += 2;
 
     ctx->meta_buffer[0] += 1;                /* Increase the number of contours. */
     ctx->meta_buffer[ctx->meta_index++] = 0; /* Set winding to zero */
@@ -132,13 +133,15 @@ static int __add_contour(const FT_Vector *to, void *user) {
 }
 static int __add_linear(const FT_Vector *to, void *user) {
     struct __glyph_data_ctx *ctx = (struct __glyph_data_ctx *)user;
-    ctx->point_buffer[ctx->point_index++] = to->x / SERIALIZER_SCALE;
-    ctx->point_buffer[ctx->point_index++] = to->y / SERIALIZER_SCALE;
-    if (ctx->point_buffer[ctx->point_index - 2] == ctx->point_buffer[ctx->point_index - 4] &&
-        ctx->point_buffer[ctx->point_index - 1] == ctx->point_buffer[ctx->point_index - 3]) {
-        ctx->point_index -= 2;
+    vec2 *segment = (vec2 *)&ctx->point_buffer[ctx->point_index - 2]; /* First point from previous */
+    segment[1].x = to->x / SERIALIZER_SCALE;
+    segment[1].y = to->y / SERIALIZER_SCALE;
+
+    /* Some glyphs contain zero-dimensional segments, ignore those. */
+    if (segment[1].x == segment[0].x && segment[1].y == segment[0].y)
         return 0;
-    }
+
+    ctx->point_index += 2;
 
     ctx->meta_buffer[ctx->meta_index++] = 0; /* Set color to 0 */
     ctx->meta_buffer[ctx->meta_index++] = 2;
@@ -147,30 +150,23 @@ static int __add_linear(const FT_Vector *to, void *user) {
 }
 static int __add_quad(const FT_Vector *control, const FT_Vector *to, void *user) {
     struct __glyph_data_ctx *ctx = (struct __glyph_data_ctx *)user;
-    ctx->point_buffer[ctx->point_index++] = control->x / SERIALIZER_SCALE;
-    ctx->point_buffer[ctx->point_index++] = control->y / SERIALIZER_SCALE;
-    bool _is_linear = false;
-    if (ctx->point_buffer[ctx->point_index - 2] == ctx->point_buffer[ctx->point_index - 4]
-        && ctx->point_buffer[ctx->point_index - 1] == ctx->point_buffer[ctx->point_index - 3]) {
-        /* Some glyphs contain "bugs", where a quad segment is actually a linear
-         segment with a double point. Treat it as a linear segment. */
-        _is_linear = true;
-        ctx->point_index -= 2;
-    }
+    vec2 *segment = (vec2 *)&ctx->point_buffer[ctx->point_index - 2]; /* First point from previous */
 
+    segment[1].x = control->x / SERIALIZER_SCALE;
+    segment[1].y = control->y / SERIALIZER_SCALE;
+    segment[2].x = to->x / SERIALIZER_SCALE;
+    segment[2].y = to->y / SERIALIZER_SCALE;
 
-    ctx->point_buffer[ctx->point_index++] = to->x / SERIALIZER_SCALE;
-    ctx->point_buffer[ctx->point_index++] = to->y / SERIALIZER_SCALE;
+    /* Some glyphs contain "bugs", where a quad segment is actually a linear
+       segment with a double point. Treat it as a linear segment. */
+    if ((segment[1].x == segment[0].x && segment[1].y == segment[0].y)
+        || (segment[2].x == segment[1].x && segment[2].y == segment[1].y))
+        return __add_linear(to, user);
 
-    if (!_is_linear && ctx->point_buffer[ctx->point_index - 2] == ctx->point_buffer[ctx->point_index - 4]
-        && ctx->point_buffer[ctx->point_index - 1] == ctx->point_buffer[ctx->point_index - 3]) {
-        /* Some glyphs contain "bugs", where a quad segment is actually a linear
-         segment with a double point. Treat it as a linear segment. */
-        _is_linear = true;
-        ctx->point_index -= 2;
-    }
+    ctx->point_index += 4;
+
     ctx->meta_buffer[ctx->meta_index++] = 0; /* Set color to 0 */
-    ctx->meta_buffer[ctx->meta_index++] = _is_linear ? 2 : 3;
+    ctx->meta_buffer[ctx->meta_index++] = 3;
     ctx->meta_buffer[ctx->nsegments_index]++;
     return 0;
 }
