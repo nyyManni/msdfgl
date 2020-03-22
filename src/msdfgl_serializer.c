@@ -21,34 +21,22 @@ typedef struct vec2 {
 } vec2;
 
 static inline vec2 mix(const vec2 a, const vec2 b, float weight) {
-    vec2 r;
-    r.x = a.x * (1.0f - weight) + b.x * weight;
-    r.y = a.y * (1.0f - weight) + b.y * weight;
-    return r;
+    return (vec2) {a.x *(1.0f - weight) + b.x *weight, a.y *(1.0f - weight) + b.y *weight};
 }
 
-static inline vec2 subt(vec2 p1, vec2 p2) {
-    vec2 p;
-    p.x = p1.x - p2.x;
-    p.y = p1.y - p2.y;
-    return p;
-}
-static inline float length(const vec2 v) { return (float)sqrt(v.x * v.x + v.y * v.y); }
+static inline vec2 subt(vec2 p1, vec2 p2) {return (vec2) {p1.x - p2.x, p1.y - p2.y};}
+static inline float length(const vec2 v) {return (float)sqrt(v.x * v.x + v.y * v.y);}
 
-static inline vec2 divide(const vec2 v, float f) {
-    vec2 p;
-    p.x = v.x / f;
-    p.y = v.y / f;
-    return p;
-}
-static inline float cross(vec2 a, vec2 b) { return a.x * b.y - a.y * b.x; }
-static inline float dot(vec2 a, vec2 b) { return a.x * b.x + a.y * b.y; }
+static inline vec2 divide(const vec2 v, float f) {return (vec2){v.x / f, v.y / f};}
+
+static inline float cross(vec2 a, vec2 b) {return a.x * b.y - a.y * b.x; }
+static inline float dot(vec2 a, vec2 b) {return a.x * b.x + a.y * b.y; }
 
 static bool is_corner(const vec2 a, const vec2 b, float cross_threshold) {
     return dot(a, b) <= 0 || fabs(cross(a, b)) > cross_threshold;
 }
 
-static inline vec2 normalize(vec2 v) { return divide(v, length(v)); }
+static inline vec2 normalize(vec2 v) {return divide(v, length(v));}
 
 static inline vec2 segment_direction(const vec2 *points, int npoints, float param) {
     return mix(subt(points[1], points[0]), subt(points[npoints - 1], points[npoints - 2]),
@@ -148,8 +136,6 @@ static int __add_linear(const FT_Vector *to, void *user) {
     ctx->point_buffer[ctx->point_index++] = to->y / SERIALIZER_SCALE;
     if (ctx->point_buffer[ctx->point_index - 2] == ctx->point_buffer[ctx->point_index - 4] &&
         ctx->point_buffer[ctx->point_index - 1] == ctx->point_buffer[ctx->point_index - 3]) {
-        /* Some glyphs contain "bugs", where a quad segment is actually a linear
-         segment with a double point. Treat it as a linear segment. */
         ctx->point_index -= 2;
         return 0;
     }
