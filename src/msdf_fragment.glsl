@@ -340,8 +340,7 @@ float compute_distance(int segment_index, vec2 point) {
     vec2 d = distance_to_pseudo_distance(ws.segments[segment_index].nearest_npoints,
                                          ws.segments[segment_index].nearest_points,
                                          ws.segments[segment_index].min_true, point);
-    if (abs(d.x) < abs(min_distance))
-        min_distance = d.x;
+    min_distance = abs(d.x) < abs(min_distance) ? d.x : min_distance;
 
     return min_distance;
 }
