@@ -109,19 +109,19 @@ int msdfgl_glyph_buffer_size(FT_Face face, int code, size_t *meta_size,
 
 struct __glyph_data_ctx {
     int meta_index;
-    int point_index;
     char *meta_buffer;
-    GLfloat *point_buffer;
 
+    vec2 *segment;
     int nsegments_index;
 };
 
 static int __add_contour(const FT_Vector *to, void *user) {
     struct __glyph_data_ctx *ctx = (struct __glyph_data_ctx *)user;
-    vec2 *segment = (vec2 *)&ctx->point_buffer[ctx->point_index];
-    segment[0].x = to->x / SERIALIZER_SCALE;
-    segment[0].y = to->y / SERIALIZER_SCALE;
-    ctx->point_index += 2;
+
+    ctx->segment += 1;  /* Start contour on a fresh glyph. */
+
+    ctx->segment[0].x = to->x / SERIALIZER_SCALE;
+    ctx->segment[0].y = to->y / SERIALIZER_SCALE;
 
     ctx->meta_buffer[0] += 1;                /* Increase the number of contours. */
     ctx->meta_buffer[ctx->meta_index++] = 0; /* Set winding to zero */
@@ -133,15 +133,14 @@ static int __add_contour(const FT_Vector *to, void *user) {
 }
 static int __add_linear(const FT_Vector *to, void *user) {
     struct __glyph_data_ctx *ctx = (struct __glyph_data_ctx *)user;
-    vec2 *segment = (vec2 *)&ctx->point_buffer[ctx->point_index - 2]; /* First point from previous */
-    segment[1].x = to->x / SERIALIZER_SCALE;
-    segment[1].y = to->y / SERIALIZER_SCALE;
+    ctx->segment[1].x = to->x / SERIALIZER_SCALE;
+    ctx->segment[1].y = to->y / SERIALIZER_SCALE;
 
     /* Some glyphs contain zero-dimensional segments, ignore those. */
-    if (segment[1].x == segment[0].x && segment[1].y == segment[0].y)
+    if (ctx->segment[1].x == ctx->segment[0].x && ctx->segment[1].y == ctx->segment[0].y)
         return 0;
 
-    ctx->point_index += 2;
+    ctx->segment += 1;
 
     ctx->meta_buffer[ctx->meta_index++] = 0; /* Set color to 0 */
     ctx->meta_buffer[ctx->meta_index++] = 2;
@@ -150,20 +149,19 @@ static int __add_linear(const FT_Vector *to, void *user) {
 }
 static int __add_quad(const FT_Vector *control, const FT_Vector *to, void *user) {
     struct __glyph_data_ctx *ctx = (struct __glyph_data_ctx *)user;
-    vec2 *segment = (vec2 *)&ctx->point_buffer[ctx->point_index - 2]; /* First point from previous */
 
-    segment[1].x = control->x / SERIALIZER_SCALE;
-    segment[1].y = control->y / SERIALIZER_SCALE;
-    segment[2].x = to->x / SERIALIZER_SCALE;
-    segment[2].y = to->y / SERIALIZER_SCALE;
+    ctx->segment[1].x = control->x / SERIALIZER_SCALE;
+    ctx->segment[1].y = control->y / SERIALIZER_SCALE;
+    ctx->segment[2].x = to->x / SERIALIZER_SCALE;
+    ctx->segment[2].y = to->y / SERIALIZER_SCALE;
 
     /* Some glyphs contain "bugs", where a quad segment is actually a linear
        segment with a double point. Treat it as a linear segment. */
-    if ((segment[1].x == segment[0].x && segment[1].y == segment[0].y)
-        || (segment[2].x == segment[1].x && segment[2].y == segment[1].y))
+    if ((ctx->segment[1].x == ctx->segment[0].x && ctx->segment[1].y == ctx->segment[0].y)
+        || (ctx->segment[2].x == ctx->segment[1].x && ctx->segment[2].y == ctx->segment[1].y))
         return __add_linear(to, user);
 
-    ctx->point_index += 4;
+    ctx->segment += 2;
 
     ctx->meta_buffer[ctx->meta_index++] = 0; /* Set color to 0 */
     ctx->meta_buffer[ctx->meta_index++] = 3;
@@ -206,10 +204,11 @@ int msdfgl_serialize_glyph(FT_Face face, int code, char *meta_buffer,
 
     struct __glyph_data_ctx ctx;
     ctx.meta_buffer = meta_buffer;
-    ctx.point_buffer = point_buffer;
     ctx.meta_index = 1;
-    ctx.point_index = 0;
     ctx.meta_buffer[0] = 0;
+    /* Start 1 before the actual buffer. The pointer is moved in the move_to callback. 
+       FT_Outline_Decompose does not have a callback for finishing a contour. */
+    ctx.segment = ((vec2 *)&point_buffer[0]) - 1;
 
     if (FT_Outline_Decompose(&face->glyph->outline, &fns, &ctx))
         return -1;
