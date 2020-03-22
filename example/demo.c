@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
         for (int i = 2; i < argc; i++) {
             msdfgl_printf(10.0, y, font, 64.0, 0xffffffff, (GLfloat *)proj,
                           MSDFGL_UTF8 | MSDFGL_KERNING, argv[i]);
-            y += msdfgl_vertical_advance(font, 64.0) / 2.0;
+            y += msdfgl_vertical_advance(font, 64.0);
         }
 
         glUseProgram(shaderProgram);
@@ -172,6 +172,9 @@ int main(int argc, char *argv[]) {
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+    msdfgl_destroy_font(font);
+    msdfgl_destroy_atlas(atlas);
+    msdfgl_destroy_context(ctx);
 
     glfwTerminate();
     return 0;
