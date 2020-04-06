@@ -95,11 +95,12 @@ echo '#endif /* _MSDF_SHADERS_H */' >>\$OUTPUT")
 endif (WIN32)
 
 add_custom_command(
-  PRE_BUILD
   OUTPUT ${SHADER_HEADER}
   COMMENT "Generating shader header"
   COMMAND ${CMAKE_CURRENT_BINARY_DIR}/gen-shaders ${SHADER_HEADER} ${SHADERS}
   DEPENDS ${SHADERS})
+
+add_custom_target(shader_header DEPENDS ${SHADER_HEADER})
 
 if (MSVC)
   add_library(msdfglstatic src/msdfgl.c src/msdfgl_serializer.c src/msdfgl_map.c example/glad/src/glad.c ${SHADER_HEADER})
@@ -114,6 +115,9 @@ else()
   set_target_properties(msdfglstatic PROPERTIES OUTPUT_NAME msdfgl)
   set_target_properties(msdfglshared PROPERTIES OUTPUT_NAME msdfgl)
 endif()
+
+add_dependencies(msdfglstatic shader_header)
+add_dependencies(msdfglshared shader_header)
 
 if (APPLE)
 
