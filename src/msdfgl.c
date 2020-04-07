@@ -434,6 +434,9 @@ void msdfgl_destroy_font(msdfgl_font_t font) {
 
 int _msdfgl_generate_glyphs_internal(msdfgl_font_t font, int32_t start, int32_t end,
                                      unsigned int range, int32_t *keys, int nkeys) {
+    GLint original_viewport[4];
+    glGetIntegerv(GL_VIEWPORT, original_viewport);
+
     msdfgl_context_t ctx = font->context;
     int retval = -2;
 
@@ -741,6 +744,8 @@ error:
         free(point_data);
     if (metadata)
         free(metadata);
+
+    glViewport(original_viewport[0], original_viewport[1], original_viewport[2], original_viewport[3]);
 
     return retval;
 }
