@@ -17,4 +17,5 @@ endforeach()
 # Write a header guard around our GLSL shader sources.
 file(WRITE ${TARGET_DIR}/_msdfgl_shaders.h "#ifndef _MSDFGL_SHADERS_H
 #define _MSDFGL_SHADERS_H${_temp_msdfgl_shaders_sources}\n
-#endif /* _MSDFGL_SHADERS_H */")
+#endif /* _MSDFGL_SHADERS_H */
+")

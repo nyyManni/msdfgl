@@ -44,6 +44,11 @@ target_link_libraries(msdfgl PUBLIC glad ${FREETYPE_LIBRARIES} ${CMAKE_DL_LIBS})
 target_compile_features(msdfgl PUBLIC c_std_11)
 if(MSVC)
     #target_compile_options(msdfgl PRIVATE /W4 /WX)
+elseif (APPLE)
+  set_target_properties(msdfgl PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+  target_compile_options(msdfgl PRIVATE -Wall -Wextra -pedantic -Werror
+                         -Wno-overlength-strings -Wno-unused-parameter -Wno-unused-variable
+                         -DGL_SILENCE_DEPRECATION)
 else()
   target_compile_options(msdfgl PRIVATE -Wall -Wextra -pedantic -Werror
                          -Wno-overlength-strings -Wno-unused-parameter -Wno-unused-variable)

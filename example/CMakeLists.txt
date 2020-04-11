@@ -16,6 +16,11 @@ if(NOT TARGET glfw)
         add_subdirectory(${glfw3_SOURCE_DIR} ${glfw3_BINARY_DIR})
     endif()
 endif()
+if (APPLE)
+  set_target_properties(msdfgldemo PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+  target_compile_options(msdfgldemo PRIVATE -DGL_SILENCE_DEPRECATION -Wno-macro-redefined)
+endif()
+
 
 target_include_directories(msdfgldemo PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 target_link_libraries(msdfgldemo PRIVATE msdfgl glfw)
