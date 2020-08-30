@@ -60,6 +60,7 @@ In `CMakeLists.txt` modify variables `FREETYPE_DIR` and `GLFW3_LIB` to point to 
 mkdir build
 cd build
 cmake -G "Visual Studio 16 2019" ..
+cmake --build .
 ```
 
 ## Usage:
@@ -113,4 +114,3 @@ The library includes two shaders:
 - Detecting incorrect winding of a glyph and inverting the texture to compensate
 - Edge-coloring for teardrop with 1 or 2 segments
 - Support for cubic segments (needed for OpenType fonts)
-- Unit testing
