@@ -218,6 +218,13 @@ int compile_shader(const char *source, GLenum type, GLuint *shader, const char *
 msdfgl_context_t msdfgl_create_context(const char *version) {
     msdfgl_context_t ctx = (msdfgl_context_t)calloc(1, sizeof(struct _msdfgl_context));
 
+/*
+ * When compiling a DLL for Windows, GL bindings need to be loaded in the DLL code separately.
+ */
+#ifdef _WIN32
+    gladLoadGL();
+#endif
+
     if (!ctx)
         return NULL;
 
