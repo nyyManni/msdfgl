@@ -1,0 +1,4 @@
+option('version', type : 'string', value : '3.11.0', description : 'project version')
+option('BUILD_SHARED_LIBS', type : 'boolean', value : true, description : 'Build Shared Libraries')
+option('BUILD_MSDFGL_EXAMPLE', type : 'boolean', value : true, description : 'Build MSDF example project')
+option('MSDFGL_INSTALL', type : 'boolean', value : true, description : 'Generate installation target')

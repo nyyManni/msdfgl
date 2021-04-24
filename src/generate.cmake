@@ -1,4 +1,3 @@
-
 # Finds all .glsl shaders in our source directory.
 file(GLOB_RECURSE  _temp_msdfgl_shaders ${SHADER_DIR}/*.glsl)
 # Creates a C-style string for each shader source.
