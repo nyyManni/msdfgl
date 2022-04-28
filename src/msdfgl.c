@@ -385,23 +385,23 @@ void msdfgl_destroy_atlas(msdfgl_atlas_t atlas) {
     free(atlas);
 }
 
-msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, float range,
-                               float scale, msdfgl_atlas_t atlas) {
+/**
+ * Initialize font from a FreeType face and generate textures and buffers for it.
+ */
+msdfgl_font_t _msdfgl_init_font_internal(msdfgl_context_t ctx, FT_Face* face,
+                                         float range, float scale,
+                                         msdfgl_atlas_t atlas) {
 
     msdfgl_font_t f = (msdfgl_font_t)calloc(1, sizeof(struct _msdfgl_font));
     if (!f)
         return NULL;
 
-    f->context = ctx;
-    f->_direct_lookup_upper_limit = 0;
-
-    if (FT_New_Face(ctx->ft_library, font_name, 0, &f->face)) {
-        free(f);
-        return NULL;
-    }
-
+    f->face  = *face;
     f->scale = scale;
     f->range = range;
+
+    f->context = ctx;
+    f->_direct_lookup_upper_limit = 0;
 
     if (!(f->atlas = atlas ? atlas : msdfgl_create_atlas(ctx, 0, 2))) {
         free(f);
@@ -420,6 +420,32 @@ msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, floa
     glGenTextures(1, &f->_point_input_texture);
 
     return f;
+}
+
+msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *font_name, float range,
+                               float scale, msdfgl_atlas_t atlas) {
+
+    FT_Face face;
+    if (FT_New_Face(ctx->ft_library, font_name, 0, &face)) {
+        return NULL;
+    }
+
+    return _msdfgl_init_font_internal(ctx, &face, range, scale, atlas);
+}
+
+/**
+ * Load font from memory and generate textures and buffers for it.
+ */
+MSDFGL_EXPORT msdfgl_font_t msdfgl_load_font_mem(msdfgl_context_t ctx, void *font_buffer,
+                                                 size_t font_buffer_size, float range,
+                                                 float scale, msdfgl_atlas_t atlas)
+{
+    FT_Face face;
+    if (FT_New_Memory_Face(ctx->ft_library, font_buffer, font_buffer_size, 0, &face)) {
+        return NULL;
+    }
+
+    return _msdfgl_init_font_internal(ctx, &face, range, scale, atlas);
 }
 
 void msdfgl_destroy_font(msdfgl_font_t font) {
