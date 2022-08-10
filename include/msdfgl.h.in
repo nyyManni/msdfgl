@@ -140,6 +140,13 @@ MSDFGL_EXPORT msdfgl_font_t msdfgl_load_font(msdfgl_context_t ctx, const char *f
                                              msdfgl_atlas_t atlas);
 
 /**
+ * Load font from memory and generate textures and buffers for it.
+ */
+MSDFGL_EXPORT msdfgl_font_t msdfgl_load_font_mem(msdfgl_context_t ctx, void *font_buffer,
+                                                 size_t font_buffer_size, float range,
+                                                 float scale, msdfgl_atlas_t atlas);
+
+/**
  * Get vertical advance of the font with the given size.
  */
 MSDFGL_EXPORT float msdfgl_vertical_advance(msdfgl_font_t font, float size);
