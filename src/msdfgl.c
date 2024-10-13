@@ -960,7 +960,7 @@ void msdfgl_geometry(float *x, float *y, msdfgl_font_t font, float size,
 
     size_t buf_idx = 0;
     GLint prev_key = -1;
-    for (size_t i = 0; buf_idx < bufsize; ++i) {
+    while (buf_idx < bufsize) {
         GLint key;
 
         if (flags & MSDFGL_WCHAR)
