@@ -1006,14 +1006,6 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
     }
     va_end(argp);
 
-    if (flags & (MSDFGL_NEWLINE_ANCHOR_FIRST | MSDFGL_NEWLINE_ANCHOR_LAST) &&
-        flags & MSDFGL_VERTICAL)
-    {
-        // TODO: No reason we couldn't support this. Just need to implement it. -MK
-        fprintf(stderr, "msdfgl: MSDFGL_NEWLINE and MSDFGL_VERTICAL are mutually exclusive (not implemented)\n");
-        return x;
-    }
-
     void *s = calloc(bufsize + 1, flags & MSDFGL_WCHAR ? sizeof(wchar_t) : sizeof(char));
     if (!s)
         return x;
@@ -1031,8 +1023,15 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
     }
 
     // Used for newline support
+    size_t y_init = y;
     size_t x_init = x;
     unsigned int n_newlines = 0;
+
+    float advance;
+    if (flags & MSDFGL_VERTICAL)
+        advance = (font->vertical_advance * (size * font->context->dpi[0] / 72.0f) / font->face->units_per_EM);
+    else
+        advance = (font->vertical_advance * (size * font->context->dpi[1] / 72.0f) / font->face->units_per_EM);
 
     size_t buf_idx = 0;
     for (size_t i = 0; buf_idx < bufsize; ++i) {
@@ -1052,15 +1051,11 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
         glyphs[i].skew = 0;
         glyphs[i].strength = 0.5;
 
-        if (flags & (MSDFGL_NEWLINE_ANCHOR_FIRST | MSDFGL_NEWLINE_ANCHOR_LAST))
-        {
-            if (glyphs[i].key == '\n')
-            {
-                x = x_init;
-                y += size;
-                n_newlines++;
-                continue;
-            }
+        if (flags & (MSDFGL_NEWLINE_ANCHOR_FIRST | MSDFGL_NEWLINE_ANCHOR_LAST) && glyphs[i].key == '\n') {
+            x = flags & MSDFGL_VERTICAL ? x + advance : x_init;
+            y = flags & MSDFGL_VERTICAL ? y_init : y + advance;
+            n_newlines++;
+            continue;
         }
 
         msdfgl_map_item_t *e = msdfgl_map_get_or_add(font, glyphs[i].key);
@@ -1084,15 +1079,13 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
                  font->face->units_per_EM;
     }
 
-    if (flags & MSDFGL_NEWLINE_ANCHOR_LAST)
-    {
-        // Move the glyphs up by the number of newlines so the baseline ends up in the correct place
-        if (n_newlines > 0)
-        {
-            for (size_t i = 0; i < bufsize; i++)
-            {
-                glyphs[i].y -= n_newlines * (font->vertical_advance * (size * font->context->dpi[1] / 72.0f) / font->face->units_per_EM);
-            }
+    // Move the glyphs up by the number of newlines so the baseline ends up in the correct place
+    if (flags & MSDFGL_NEWLINE_ANCHOR_LAST && n_newlines > 0) {
+        for (size_t i = 0; i < bufsize; i++) {
+            if (flags & MSDFGL_VERTICAL)
+                glyphs[i].x -= n_newlines * advance;
+            else
+                glyphs[i].y -= n_newlines * advance;
         }
     }
 
