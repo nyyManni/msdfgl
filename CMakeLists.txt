@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.11.0 FATAL_ERROR)
-project(msdfgl VERSION 0.2.2 DESCRIPTION "OpenGL MSDF Generator and renderer" LANGUAGES C)
+project(msdfgl VERSION 0.2.3 DESCRIPTION "OpenGL MSDF Generator and renderer" LANGUAGES C)
 
 include(GNUInstallDirs)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
