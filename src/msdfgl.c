@@ -1027,8 +1027,10 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
     size_t x_init = x;
     unsigned int n_newlines = 0;
 
-    float leading;
+    float leading; // distance between baselines
     if (flags & MSDFGL_VERTICAL)
+        // we're in vertical mode, so ideally we'd like a horizontal advance, but that's not a thing,
+        // so we'll use the vertical advance as a proxy for `what's the right distance between lines?` -MK
         leading = (font->vertical_advance * (size * font->context->dpi[0] / 72.0f) / font->face->units_per_EM);
     else
         leading = (font->vertical_advance * (size * font->context->dpi[1] / 72.0f) / font->face->units_per_EM);
