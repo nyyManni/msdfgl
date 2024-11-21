@@ -1027,11 +1027,11 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
     size_t x_init = x;
     unsigned int n_newlines = 0;
 
-    float advance;
+    float leading;
     if (flags & MSDFGL_VERTICAL)
-        advance = (font->vertical_advance * (size * font->context->dpi[0] / 72.0f) / font->face->units_per_EM);
+        leading = (font->vertical_advance * (size * font->context->dpi[0] / 72.0f) / font->face->units_per_EM);
     else
-        advance = (font->vertical_advance * (size * font->context->dpi[1] / 72.0f) / font->face->units_per_EM);
+        leading = (font->vertical_advance * (size * font->context->dpi[1] / 72.0f) / font->face->units_per_EM);
 
     size_t buf_idx = 0;
     for (size_t i = 0; buf_idx < bufsize; ++i) {
@@ -1083,9 +1083,9 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
     if (flags & MSDFGL_NEWLINE_ANCHOR_LAST && n_newlines > 0) {
         for (size_t i = 0; i < bufsize; i++) {
             if (flags & MSDFGL_VERTICAL)
-                glyphs[i].x -= n_newlines * advance;
+                glyphs[i].x -= n_newlines * leading;
             else
-                glyphs[i].y -= n_newlines * advance;
+                glyphs[i].y -= n_newlines * leading;
         }
     }
 
