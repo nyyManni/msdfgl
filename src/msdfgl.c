@@ -1023,8 +1023,8 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
     }
 
     // Used for newline support
-    size_t y_init = y;
-    size_t x_init = x;
+    float y_init = y;
+    float x_init = x;
     unsigned int n_newlines = 0;
 
     float leading; // distance between baselines
