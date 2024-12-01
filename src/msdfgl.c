@@ -1027,14 +1027,6 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
     float x_init = x;
     unsigned int n_newlines = 0;
 
-    float leading; // distance between baselines
-    if (flags & MSDFGL_VERTICAL)
-        // we're in vertical mode, so ideally we'd like a horizontal advance, but that's not a thing,
-        // so we'll use the vertical advance as a proxy for `what's the right distance between lines?` -MK
-        leading = (font->vertical_advance * (size * font->context->dpi[0] / 72.0f) / font->face->units_per_EM);
-    else
-        leading = (font->vertical_advance * (size * font->context->dpi[1] / 72.0f) / font->face->units_per_EM);
-
     size_t buf_idx = 0;
     for (size_t i = 0; buf_idx < bufsize; ++i) {
         glyphs[i].x = x;
@@ -1080,6 +1072,8 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
             x += (e->advance[0] + kerning.x) * (size * font->context->dpi[0] / 72.0f) /
                  font->face->units_per_EM;
     }
+
+    float leading = size * font->context->dpi[...] / 72.0f;
 
     // Move the glyphs up by the number of newlines so the baseline ends up in the correct place
     if (flags & MSDFGL_NEWLINE_ANCHOR_LAST && n_newlines > 0) {
