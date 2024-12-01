@@ -1022,6 +1022,14 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
         return x;
     }
 
+    // Used for newline support
+    float y_init = y;
+    float x_init = x;
+    // unsigned int n_newlines = 0;
+    float leading = size * font->context->dpi[(flags & MSDFGL_VERTICAL) ? 0 : 1] / 72.0f;
+    const float line_spacing = 1.0f; // for now fix line spacing to 1.0
+    leading *= line_spacing;
+
     size_t buf_idx = 0;
     for (size_t i = 0; buf_idx < bufsize; ++i) {
         glyphs[i].x = x;
@@ -1039,6 +1047,13 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
         glyphs[i].offset = 0;
         glyphs[i].skew = 0;
         glyphs[i].strength = 0.5;
+
+        if (glyphs[i].key == '\n') {
+            x = flags & MSDFGL_VERTICAL ? x + leading : x_init;
+            y = flags & MSDFGL_VERTICAL ? y_init : y + leading;
+            // n_newlines++;
+            continue;
+        }
 
         msdfgl_map_item_t *e = msdfgl_map_get_or_add(font, glyphs[i].key);
 
@@ -1060,6 +1075,17 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
             x += (e->advance[0] + kerning.x) * (size * font->context->dpi[0] / 72.0f) /
                  font->face->units_per_EM;
     }
+
+    // Move the glyphs up by the number of newlines so the baseline ends up in the correct place
+    // if (n_newlines > 0) {
+    //     for (size_t i = 0; i < bufsize; i++) {
+    //         if (flags & MSDFGL_VERTICAL)
+    //             glyphs[i].x -= n_newlines * leading;
+    //         else
+    //             glyphs[i].y -= n_newlines * leading;
+    //     }
+    // }
+
     msdfgl_render(font, glyphs, bufsize, projection);
     free(glyphs);
     free(s);
