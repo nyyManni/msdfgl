@@ -219,7 +219,6 @@ enum msdfgl_printf_flags {
      *       to msdfgl.
      */
     MSDFGL_UTF8 = 0x08,
-
 };
 
 /**
