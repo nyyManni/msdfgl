@@ -220,23 +220,6 @@ enum msdfgl_printf_flags {
      */
     MSDFGL_UTF8 = 0x08,
 
-    /**
-     * Enable newline support. The anchor point behaviour can be controlled by the flags
-     * MSDFGL_NEWLINE_ANCHOR_TOP and MSDFGL_NEWLINE_ANCHOR_BOTTOM. The newline character
-     * will move the cursor to the next line. The newline character is not rendered.
-     */
-    MSDFGL_NEWLINE = 0x10,
-
-    /**
-     * Anchor is the bottom left base point of the first glyph in the *FIRST* line.
-     * This is the default behaviour.
-     */
-    MSDFGL_NEWLINE_ANCHOR_FIRST = 0x10,
-
-    /**
-     * Anchor is the bottom left base point of the last glyph in the *LAST* line.
-     */
-    MSDFGL_NEWLINE_ANCHOR_LAST = 0x20,
 };
 
 /**

@@ -1025,7 +1025,10 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
     // Used for newline support
     float y_init = y;
     float x_init = x;
-    unsigned int n_newlines = 0;
+    // unsigned int n_newlines = 0;
+    float leading = size * font->context->dpi[(flags & MSDFGL_VERTICAL) ? 0 : 1] / 72.0f;
+    const float line_spacing = 1.0f; // for now fix line spacing to 1.0
+    leading *= line_spacing;
 
     size_t buf_idx = 0;
     for (size_t i = 0; buf_idx < bufsize; ++i) {
@@ -1045,10 +1048,10 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
         glyphs[i].skew = 0;
         glyphs[i].strength = 0.5;
 
-        if (flags & (MSDFGL_NEWLINE_ANCHOR_FIRST | MSDFGL_NEWLINE_ANCHOR_LAST) && glyphs[i].key == '\n') {
-            x = flags & MSDFGL_VERTICAL ? x + advance : x_init;
-            y = flags & MSDFGL_VERTICAL ? y_init : y + advance;
-            n_newlines++;
+        if (glyphs[i].key == '\n') {
+            x = flags & MSDFGL_VERTICAL ? x + leading : x_init;
+            y = flags & MSDFGL_VERTICAL ? y_init : y + leading;
+            // n_newlines++;
             continue;
         }
 
@@ -1073,17 +1076,15 @@ float msdfgl_printf(float x, float y, msdfgl_font_t font, float size, int32_t co
                  font->face->units_per_EM;
     }
 
-    float leading = size * font->context->dpi[...] / 72.0f;
-
     // Move the glyphs up by the number of newlines so the baseline ends up in the correct place
-    if (flags & MSDFGL_NEWLINE_ANCHOR_LAST && n_newlines > 0) {
-        for (size_t i = 0; i < bufsize; i++) {
-            if (flags & MSDFGL_VERTICAL)
-                glyphs[i].x -= n_newlines * leading;
-            else
-                glyphs[i].y -= n_newlines * leading;
-        }
-    }
+    // if (n_newlines > 0) {
+    //     for (size_t i = 0; i < bufsize; i++) {
+    //         if (flags & MSDFGL_VERTICAL)
+    //             glyphs[i].x -= n_newlines * leading;
+    //         else
+    //             glyphs[i].y -= n_newlines * leading;
+    //     }
+    // }
 
     msdfgl_render(font, glyphs, bufsize, projection);
     free(glyphs);
